@@ -1,14 +1,10 @@
 ---
-author: Timur Gilfanov
-pubDatetime: 2026-05-10T13:46:00Z
 title: One Year Building an Android Messenger Showcase Project
-slug: one-year-building-an-android-messenger-showcase-project
-featured: true
-draft: true
-tags:
-  - android
 description:
   About a year ago, I started a project to learn approaches for development in a team with more then one developer on Android platform and grow as Android engineer. Here are the main lessons I learned.
+pubDatetime: 2026-05-10T13:46:00Z
+featured: true
+draft: true
 ---
 
 About a year ago, I started a project to learn approaches for development in a team with more then one developer on Android platform and grow as Android engineer. Here are the main lessons I learned.
