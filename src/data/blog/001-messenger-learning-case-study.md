@@ -30,10 +30,14 @@ With vertical slicing, a developer owns a complete sub-feature end-to-end instea
 
 This approach makes feature requirements easier to reason about because the same developer owns the complete behavior of the sub-feature end-to-end. It also reduces coordination overhead by minimizing the amount of implementation detail that must be synchronized across multiple developers during active development.
 
-### Following same conventions in codebase
-#### Record of decisions and rules
-Record of decisions that have wide and long-term consequences worth to be comprehensive: 1-2 page with the context, decision, alternatives, and positive and negative consequences. Following structure and writing document helps with the quality of decision and will be explanations for engineers and AI agents why this decision was made.
-Rules are similar to records of decision but established project-wide pattern, not record a architecture decision in specific moment of time.
+### Following the same conventions in the codebase
+Shared ownership becomes difficult when architectural decisions exist only in the heads of individual developers. Engineers need to understand not only what the current implementation is, but also why specific trade-offs were made, which constraints existed, and what alternatives were considered, and where the boundaries of a rule or decision apply.
+
+To reduce this coordination overhead, I started documenting decisions with long-term architectural consequences as decision records: short documents describing the context, chosen solution, alternatives, and consequences. Writing these documents also improved the quality of the decisions themselves by forcing me to make assumptions and trade-offs explicit.
+
+I also introduced architecture rules for project-wide patterns that should be applied consistently across the codebase. Unlike decision records, which capture a decision made at a specific moment in time, rules describe reusable constraints and conventions such as ownership of state updates, side-effect organization, or boundaries between domain and UI layers.
+
+These documents became increasingly useful not only for engineers, but also for coding agents, because both require clear and durable project context to work predictably in a shared codebase.
 
 ## Architecture complexity should match real problems
 At the beginning of the project, I did not have a clear understanding of UI architecture: why MVI exists, what problems it solves compared to MVVM, and when its additional complexity is justified.
