@@ -68,28 +68,20 @@ The specification also became useful when working with coding agents because fea
 ## CI and testing strategy to catch regressions
 I started building CI and testing infrastructure from the beginning of the project because even relatively small applications accumulate more behaviors, edge cases, and interactions than engineers can reliably keep in mind during every change.
 
-The later regressions are discovered, the more expensive they become to investigate and fix. To reduce this feedback loop, I treated testing and CI as part of the development workflow instead of a separate quality phase after implementation.
+I started building CI and testing infrastructure from the beginning of the project because even relatively small applications accumulate more behaviors and interactions than engineers can reliably validate manually during every change.
 
-The goal was not to maximize coverage numbers or test count, but to create fast and reliable feedback loops with reasonable maintenance cost. Different test categories validate different kinds of failures: architectural boundary violations, incorrect isolated logic, UI regressions, integration failures, or broken end-to-end user flows.
+At first, testing seemed straightforward: write unit and integration tests and run them in CI before merge. As the project grew, this approach stopped scaling well. Different kinds of failures required different levels of confidence, execution environments, and runtime costs.
 
-Running the entire test suite locally on every commit quickly becomes too expensive, so the workflow evolved into multiple feedback layers. Fast and relevant tests run during local development, while broader and more expensive test suites execute in CI to gate pull request merges.
-
-This also forced me to think more systematically about testing trade-offs: what should be tested, at which level, in which environment, and at which stage of development.
+Running all verification locally on every change would dramatically slow down development, while relying only on fast tests would leave large categories of regressions undetected until much later. This forced me to think about testing less as a collection of individual tests and more as a verification strategy with explicit trade-offs between confidence, execution cost, and feedback speed.
 
 ### Testing strategy
 
-As the number of test categories, environments, and CI execution rules grew, ad hoc testing decisions became increasingly inconsistent. Without explicit rules, the same feature could reasonably be tested in different ways depending on who implemented it.
-
-To make these expectations explicit, I introduced a testing strategy document describing:
+To make these trade-offs explicit, I introduced a testing strategy document describing:
 - which categories of tests should exist,
-- what environments and Android API levels they should run on,
-- at which stages of development they should execute,
+- what failures they validate,
+- where and when they should run,
 - and which failures should block merges or releases.
 
-The strategy separated architecture, unit, component, feature, application, and release-candidate testing because each category optimizes for different feedback speed, confidence level, and maintenance cost.
+The strategy separated architecture, unit, component, screenshot, feature, application, and release-candidate testing because each category optimizes for different trade-offs.
 
-Separating tests into categories also allowed CI to execute different levels of verification at different stages of development instead of treating all tests as a single undifferentiated suite.
-
-This also made CI behavior easier to reason about because test execution rules became part of the project conventions instead of implicit team knowledge.
-
-## Coding agents and Ralph loop changes flow for IC
+This also changed how I thought about CI itself. Instead of simply running “all tests,” CI became a system that executes different levels of verification at different lifecycle stages based on the confidence and cost requirements of the change.
