@@ -16,26 +16,26 @@ A few months later, after a failed interview, the project direction expanded. I 
 
 After a year, the most valuable outcome was not the app itself, but how much my understanding of engineering processes changed.
 
-## Shared ownership
+## Shared ownership in larger Android teams
 Larger Android teams optimize for different things than solo or small-team projects. The challenge is no longer only feature delivery — it becomes coordination, predictability, and consistency.
 
 ### Reduce costs of parallel development coordination
 When multiple developers work on the same feature in parallel, their changes eventually need to be merged. The more overlapping implementation details they touch, the more coordination and conflict resolution are required.
 
-To reduce this overhead, teams need to agree on clear contracts before implementation begins: boundaries between responsibilities, APIs, data models, and ownership of different parts of the feature.
+To reduce this overhead, teams need to agree on clear technical boundaries before implementation begins: APIs and data models.
 
-Once the contracts are defined, the next question is how to split work between developers. With horizontal slicing, one developer implements UI while another works on data or domain layers of the same feature. This can reduce short-term coordination inside a layer, but it also creates additional merge points and makes ownership of the complete user experience less clear.
+The next question is how to split work between developers and define ownership boundaries. With horizontal slicing, one developer implements UI while another works on data or domain layers of the same feature. This can reduce short-term coordination inside a layer, but it also creates additional merge points and makes ownership of the complete user experience less clear.
 
-With vertical slicing, a developer owns a complete sub-feature end-to-end instead of only one technical layer: UI, domain, data flow, and business rules together. For example, in an authentication feature, one developer could own login while another owns session management.
+With vertical slicing, a developer owns a sub-feature end-to-end instead of only one technical layer: UI, domain, data flow, and business rules together. For example, in an authentication feature, one developer could own login while another owns session management.
 
-This approach makes feature requirements easier to reason about because the same developer owns the complete behavior of the sub-feature end-to-end. It also reduces coordination overhead by minimizing the amount of implementation detail that must be synchronized across multiple developers during active development.
+This approach makes feature requirements easier to reason about because the same developer owns the complete behavior of the sub-feature. It also reduces coordination overhead by minimizing the amount of implementation detail that must be synchronized across multiple developers during active development.
 
 ### Following the same conventions in the codebase
-Shared ownership becomes difficult when architectural decisions exist only in the heads of individual developers. Engineers need to understand not only what the current implementation is, but also why specific trade-offs were made, which constraints existed, and what alternatives were considered, and where the boundaries of a rule or decision apply.
+Shared ownership becomes difficult when architectural decisions exist only in the heads of individual developers. Engineers need to understand not only what the current implementation is, but also why specific trade-offs were made, which constraints existed, what alternatives were considered, and the scope of a rule or decision.
 
-To reduce this coordination overhead, I started documenting decisions with long-term architectural consequences as decision records: short documents describing the context, chosen solution, alternatives, and consequences. Writing these documents also improved the quality of the decisions themselves by forcing me to make assumptions and trade-offs explicit.
+To reduce this coordination overhead, I started documenting decisions with long-term architectural consequences as Architecture Decision Records (ADRs): short documents describing the context, chosen solution, alternatives, and consequences. Writing these documents also improved the decisions themselves because assumptions and trade-offs had to be made explicit.
 
-I also introduced architecture rules for project-wide patterns that should be applied consistently across the codebase. Unlike decision records, which capture a decision made at a specific moment in time, rules describe reusable constraints and conventions such as ownership of state updates, side-effect organization, or boundaries between domain and UI layers.
+I also introduced Architecture Rules (ARs) for project-wide patterns that should be applied consistently across the codebase. Unlike ADRs, which capture a decision made at a specific moment in time, rules describe reusable constraints and conventions such as ownership of state updates, side-effect organization, or boundaries between domain and UI layers.
 
 These documents became increasingly useful not only for engineers, but also for coding agents, because both require clear and durable project context to work predictably in a shared codebase.
 
