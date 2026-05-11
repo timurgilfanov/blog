@@ -29,9 +29,16 @@ Problem, options with trade-offs, solution
 Record of decisions that have wide and long-term consequences worth to be comprehensive: 1-2 page with the context, decision, alternatives, and positive and negative consequences. Following structure and writing document helps with the quality of decision and will be explanations for engineers and AI agents why this decision was made.
 Rules are similar to records of decision but established project-wide pattern, not record a architecture decision in specific moment of time.
 
-##### Reaccess decisions when requirements changes (to be familiar with Orbit MVI -> custom light MVI is enought)
-I did not have clear understanding of UI architecture: why MVI exists, what the difference to MVVM. I bring a dependency that implement MVI and follow its guidelines. First stuck was at the moment  when I needed to do something not covered by examples. Without clear understanding of MVI and what new dependency about it was hard to understand how data flow in my implementation.
-I understand that I don’t understand UI architecture on interview and dive into this area. The got deeper understanding MVVM, and MVI and learning of actor/reducer pattern. The material results was an architecture rule about what MVI with actor and reducer needs, and migration of all screens of application from dependency-based MVI solution to lighter MVI without dependency and actor and reducer. I found minimum of architecture complexity that cover current needs and have a pattern to cover move complex cases when they required as a bonus.
+## Architecture should solve real problems
+At the beginning of the project, I did not have a clear understanding of UI architecture: why MVI exists, what problems it solves compared to MVVM, and when its additional complexity is justified.
+
+I adopted an external dependency that implemented MVI and followed its documentation and examples. The first major problem appeared when I needed behavior that was not covered by the “happy path” examples from the library. Without understanding the underlying principles of MVI and the abstractions introduced by the dependency, it became difficult to reason about data flow, state updates, and coordination between asynchronous operations.
+
+During one interview, I realized I could not clearly explain the architectural trade-offs behind my own implementation. That pushed me to study this area more deeply: MVVM, MVI, actor/reducer patterns, unidirectional data flow, and concurrency coordination in UI state management.
+
+The practical result was not switching from one “correct” architecture to another, but understanding which concrete problems different approaches solve. Over time, this led to an [architecture rule](https://github.com/timurgilfanov/messenger/blob/main/docs/architecture/AR-01-single-authority-for-ordering-rules.md) describing when actor/reducer-based MVI is justified and when simpler approaches are enough.
+
+Eventually, I migrated the entire application from a dependency-heavy MVI solution to a lighter custom implementation without external architectural dependencies. I ended up with the minimum architectural complexity that covered the current product needs while still leaving a path for more complex scenarios in the future.
 
 ## Define business requirements before architecture
 I started by implementing one screen after another and made business decisions when I needed to code the behaviour. It slows me down and add migration work when I saw that previous decision is not worked for lager picture. It’s hard to jump between low-level and high-level and decisions tends to be not optimal for whole product when you have this narrow focus when start to think about problem.
