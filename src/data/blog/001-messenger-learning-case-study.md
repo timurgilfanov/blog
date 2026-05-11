@@ -65,22 +65,23 @@ This also changed how I approached architecture itself. Architecture decisions b
 
 The specification also became useful when working with coding agents because feature planning discussions could reference documented product rules, constraints, and domain concepts instead of relying only on partially implemented code or implicit assumptions.
 
-## CI and testing strategy to catch regressions
-I started building CI and testing infrastructure from the beginning of the project because even relatively small applications accumulate more behaviors, edge cases, and interactions than engineers can reliably keep in mind during every change.
+## Testing became a staged verification system
 
 I started building CI and testing infrastructure from the beginning of the project because even relatively small applications accumulate more behaviors and interactions than engineers can reliably validate manually during every change.
 
 At first, testing seemed straightforward: write unit and integration tests and run them in CI before merge. As the project grew, this approach stopped scaling well. Different kinds of failures required different levels of confidence, execution environments, and runtime costs.
 
-Running all verification locally on every change would dramatically slow down development, while relying only on fast tests would leave large categories of regressions undetected until much later. This forced me to think about testing less as a collection of individual tests and more as a verification strategy with explicit trade-offs between confidence, execution cost, and feedback speed.
+Running all verification locally on every change would dramatically slow down development, while relying only on fast tests would leave large categories of regressions undetected until much later. This forced me to think about testing less as a collection of individual tests and more as a verification strategy with explicit trade-offs between confidence, verification cost, and feedback speed.
 
-### Testing strategy
+### Different failures require different verification
 
 To make these trade-offs explicit, I introduced a testing strategy document describing:
 - which categories of tests should exist,
 - what failures they validate,
 - where and when they should run,
 - and which failures should block merges or releases.
+
+This helped separate fast feedback from high-confidence verification instead of treating all tests as equally important during every stage of development.
 
 The strategy separated architecture, unit, component, screenshot, feature, application, and release-candidate testing because each category optimizes for different trade-offs.
 
