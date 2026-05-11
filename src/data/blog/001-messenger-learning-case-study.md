@@ -66,9 +66,30 @@ This also changed how I approached architecture itself. Architecture decisions b
 The specification also became useful when working with coding agents because feature planning discussions could reference documented product rules, constraints, and domain concepts instead of relying only on partially implemented code or implicit assumptions.
 
 ## CI and testing strategy to catch regressions
-With the complexity of the project rises number on things that could be broken. It's hard to expect from engineers to keep all of them in mind. Later broken thigs found — more it costs. Solution is to write unit and integration tests to find regressions and run them early. We cannot run all tests on each commit localy, but run fast and relevant tests on each commit, and all tests to gate PR merge seems reasonable default.
+I started building CI and testing infrastructure from the beginning of the project because even relatively small applications accumulate more behaviors, edge cases, and interactions than engineers can reliably keep in mind during every change.
+
+The later regressions are discovered, the more expensive they become to investigate and fix. To reduce this feedback loop, I treated testing and CI as part of the development workflow instead of a separate quality phase after implementation.
+
+The goal was not to maximize coverage numbers or test count, but to create fast and reliable feedback loops with reasonable maintenance cost. Different test categories validate different kinds of failures: architectural boundary violations, incorrect isolated logic, UI regressions, integration failures, or broken end-to-end user flows.
+
+Running the entire test suite locally on every commit quickly becomes too expensive, so the workflow evolved into multiple feedback layers. Fast and relevant tests run during local development, while broader and more expensive test suites execute in CI to gate pull request merges.
+
+This also forced me to think more systematically about testing trade-offs: what should be tested, at which level, in which environment, and at which stage of development.
 
 ### Testing strategy
-It's good to have a document that describe what levels of testing we should have, what device and Android API we tests at what stage, and what coverage we expect. Without this agreement hard to expect consistency it testing trade-offs solving across the codebase.
+
+As the number of test categories, environments, and CI execution rules grew, ad hoc testing decisions became increasingly inconsistent. Without explicit rules, the same feature could reasonably be tested in different ways depending on who implemented it.
+
+To make these expectations explicit, I introduced a testing strategy document describing:
+- which categories of tests should exist,
+- what environments and Android API levels they should run on,
+- at which stages of development they should execute,
+- and which failures should block merges or releases.
+
+The strategy separated architecture, unit, component, feature, application, and release-candidate testing because each category optimizes for different feedback speed, confidence level, and maintenance cost.
+
+Separating tests into categories also allowed CI to execute different levels of verification at different stages of development instead of treating all tests as a single undifferentiated suite.
+
+This also made CI behavior easier to reason about because test execution rules became part of the project conventions instead of implicit team knowledge.
 
 ## Coding agents and Ralph loop changes flow for IC
