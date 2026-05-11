@@ -1,16 +1,16 @@
 ---
-title: One Year Building an Android Messenger Showcase Project
+title: One Year Rebuilding My Understanding of Android Architecture
 description:
   About a year ago, I started a project to learn approaches for development in a team with more then one developer on Android platform and grow as Android engineer. Here are the main lessons I learned.
 pubDatetime: 2026-05-10T13:46:00Z
 featured: true
-draft: true
+draft: false
 ---
 My reflection on maintainable Android architecture started around 2021, after repeatedly experiencing how my own spaghetti code led to expensive debugging, difficult onboarding, and growing long-term maintenance costs in real projects.
 
 Over the next few years, I adopted Google’s recommended app architecture in new projects and partially migrated legacy codebases toward it. Later, after reading Clean Architecture by Robert C. Martin, I gained a much deeper understanding of concepts like separation of concerns, dependency inversion, and the Dependency Rule.
 
-I started this showcase project as my first attempt to apply these ideas consistently in a production-like environment with long-term architectural evolution in mind.
+I started [Messenger](https://github.com/timurgilfanov/messenger) showcase project as my first attempt to apply these ideas consistently in a production-like environment with long-term architectural evolution in mind.
 
 A few months later, after a failed interview, the project direction expanded. I realized I lacked experience with another class of problems common in larger Android teams: shared ownership, architectural consistency, and development patterns that allow multiple engineers to work in the same codebase predictably.
 
@@ -67,7 +67,7 @@ The specification also became useful when working with coding agents because fea
 
 ## Testing became a staged verification system
 
-I started building CI and testing infrastructure from the beginning of the project because even relatively small applications accumulate more behaviors and interactions than engineers can reliably validate manually during every change.
+I started building automated testing and CI from the beginning of the project because even relatively small applications accumulate more behaviors and interactions than engineers can reliably validate manually during every change.
 
 At first, testing seemed straightforward: write unit and integration tests and run them in CI before merge. As the project grew, this approach stopped scaling well. Different kinds of failures required different levels of confidence, execution environments, and runtime costs.
 
@@ -75,7 +75,7 @@ Running all verification locally on every change would dramatically slow down de
 
 ### Different failures require different verification
 
-To make these trade-offs explicit, I introduced a testing strategy document describing:
+To make these trade-offs explicit, I introduced a [testing strategy](https://github.com/timurgilfanov/messenger/blob/main/docs/Testing%20Strategy.md) document defining:
 - which categories of tests should exist,
 - what failures they validate,
 - where and when they should run,
@@ -83,6 +83,25 @@ To make these trade-offs explicit, I introduced a testing strategy document desc
 
 This helped separate fast feedback from high-confidence verification instead of treating all tests as equally important during every stage of development.
 
-The strategy separated architecture, unit, component, screenshot, feature, application, and release-candidate testing because each category optimizes for different trade-offs.
+CI evolved into a staged verification pipeline with multiple verification layers optimized for different execution environments, confidence levels, and runtime costs. Instead of simply running “all tests,” the pipeline executes different levels of validation at different lifecycle stages based on the confidence and cost requirements of the change.
 
-This also changed how I thought about CI itself. Instead of simply running “all tests,” CI became a system that executes different levels of verification at different lifecycle stages based on the confidence and cost requirements of the change.
+## Coding agents changed how I think about implementation workflows
+
+During this project, coding agents gradually became part of my daily development workflow. I started with using Claude Code and later Codex mostly for isolated code generation tasks during implementation.
+
+As the capabilities of the agents evolved, my workflow evolved with them. Instead of treating them only as code generators, I started using them more as implementation and review helpers to reduce repetitive work, speed up iteration, and improve the overall quality of the result.
+
+This shifted my own role away from writing every implementation detail manually and more toward specification, planning, review, and workflow design. A large part of the work became building enough project context and development constraints that agents could operate predictably: architecture rules, specifications, testing strategy, repository conventions, CI checks, and reusable workflows.
+
+I also started building small automation and harness tooling around the agents themselves to improve iteration speed and reduce review overhead. At one point, this included experimenting with [ralphex](https://github.com/umputun/ralphex), an extended Ralph loop orchestration tool for autonomous plan execution and multi-agent review.
+
+The goal was not fully autonomous implementation, but creating workflows where generated changes already align reasonably well with project conventions before review begins.
+
+This reinforced many of the same lessons from the rest of the project. Coding agents become much more effective when architectural boundaries, ownership rules, requirements, and development processes are already explicit. In practice, many problems that appear to be AI quality problems are actually missing specification and coordination problems inside the project itself.
+
+## Conclusion 
+The most important lesson from this project was that maintainable architecture is not created by adopting specific patterns, frameworks, or libraries. It emerges from making product rules, ownership boundaries, architectural decisions, and development workflows explicit enough that multiple engineers can evolve the system predictably over time.
+
+Many of the problems I encountered were not caused by incorrect technology choices, but by missing constraints, implicit assumptions, or unclear coordination rules. As the project evolved, architecture became less about finding “correct” abstractions and more about reducing long-term coordination and maintenance costs.
+
+The project itself is still evolving, but after a year, the biggest change was how I think about software engineering: architecture, testing, specifications, and development processes are not separate concerns. They are all mechanisms for helping teams build and change complex systems predictably.
