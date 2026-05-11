@@ -17,12 +17,18 @@ A few months later, after a failed interview, the project direction expanded. I 
 After a year, the most valuable outcome was not the app itself, but how much my understanding of engineering processes changed.
 
 ## Shared ownership
-My backgound is solely ownership of 100k+ MAU Android applications development end-to-end. For the 1M+ MAU application I'm targeting in my career more then one Android engineer works on application and pair of Senior and Middle engineer work in same codebase often. This creates new challenges:
-- How to reduce costs of coordination working on the same codebase in parallel?
-- How to keep whole project codebase following the same conventions to reduce onboarding time and make learned knowledge in one part of codebase transferable to other part of codebase?
+Larger Android teams optimize for different things than solo or small-team projects. The challenge is no longer only feature delivery — it becomes coordination, predictability, and consistency.
 
 ### Reduce costs of parallel development coordination
-Problem, options with trade-offs, solution
+When multiple developers work on the same feature in parallel, their changes eventually need to be merged. The more overlapping implementation details they touch, the more coordination and conflict resolution are required.
+
+To reduce this overhead, teams need to agree on clear contracts before implementation begins: boundaries between responsibilities, APIs, data models, and ownership of different parts of the feature.
+
+Once the contracts are defined, the next question is how to split work between developers. With horizontal slicing, one developer implements UI while another works on data or domain layers of the same feature. This can reduce short-term coordination inside a layer, but it also creates additional merge points and makes ownership of the complete user experience less clear.
+
+With vertical slicing, a developer owns a complete sub-feature end-to-end instead of only one technical layer: UI, domain, data flow, and business rules together. For example, in an authentication feature, one developer could own login while another owns session management.
+
+This approach makes feature requirements easier to reason about because the same developer owns the complete behavior of the sub-feature end-to-end. It also reduces coordination overhead by minimizing the amount of implementation detail that must be synchronized across multiple developers during active development.
 
 ### Following same conventions in codebase
 #### Record of decisions and rules
