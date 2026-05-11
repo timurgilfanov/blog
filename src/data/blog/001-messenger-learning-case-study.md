@@ -6,8 +6,15 @@ pubDatetime: 2026-05-10T13:46:00Z
 featured: true
 draft: true
 ---
+My reflection on maintainable Android architecture started around 2021, after repeatedly experiencing how my own spaghetti code led to expensive debugging, difficult onboarding, and growing long-term maintenance costs in real projects.
 
-About a year ago, I started a project to learn approaches for development in a team with more then one developer on Android platform and grow as Android engineer. Here are the main lessons I learned.
+Over the next few years, I adopted Google’s recommended app architecture in new projects and partially migrated legacy codebases toward it. Later, after reading Clean Architecture by Robert C. Martin, I gained a much deeper understanding of concepts like separation of concerns, dependency inversion, and the Dependency Rule.
+
+I started this showcase project as my first attempt to apply these ideas consistently in a production-like environment with long-term architectural evolution in mind.
+
+A few months later, after a failed interview, the project direction expanded. I realized I lacked experience with another class of problems common in larger Android teams: shared ownership, architectural consistency, and development patterns that allow multiple engineers to work in the same codebase predictably.
+
+After a year, the most valuable outcome was not the app itself, but how much my understanding of engineering processes changed.
 
 ## Shared ownership
 My backgound is solely ownership of 100k+ MAU Android applications development end-to-end. For the 1M+ MAU application I'm targeting in my career more then one Android engineer works on application and pair of Senior and Middle engineer work in same codebase often. This creates new challenges:
