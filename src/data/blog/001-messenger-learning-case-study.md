@@ -1,7 +1,6 @@
 ---
 title: One Year Rebuilding My Understanding of Android Architecture
-description:
-  About a year ago, I started a project to learn approaches for development in a team with more then one developer on Android platform and grow as Android engineer. Here are the main lessons I learned.
+description: Lessons from a year-long Android showcase project about maintainable architecture, shared ownership, requirements, testing, CI, and AI-assisted development workflows.
 pubDatetime: 2026-05-10T13:46:00Z
 featured: true
 draft: false
