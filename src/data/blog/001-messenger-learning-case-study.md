@@ -52,9 +52,18 @@ The practical result was not switching from one “correct” architecture to an
 
 Eventually, I migrated the application from a dependency-heavy MVI solution to a lighter custom implementation without external architectural dependencies. Screens without complex coordination requirements now use simpler state management, while more complex flows still have a clear path for serialized state coordination when needed. This also made architectural decisions easier to communicate and review, which became increasingly important as I started thinking more about shared ownership and long-term maintainability.
 
-## Define business requirements before architecture
-I started by implementing one screen after another and made business decisions when I needed to code the behaviour. It slows me down and add migration work when I saw that previous decision is not worked for lager picture. It’s hard to jump between low-level and high-level and decisions tends to be not optimal for whole product when you have this narrow focus when start to think about problem.
-After few significant migrations I decided to start thinking of my project as a product and define business requirements. I define a scope of the features that I want to see, level of confidentiality and non-functional requirements. It helps me and coding agents to focus on task at hand and now made high-level decisions in the middle of feature implementation.
+## Requirements should drive architecture
+At the beginning of the project, I approached development screen by screen and made product decisions during implementation. This created repeated architectural rework because many technical decisions depended on product rules that had never been defined explicitly.
+
+For example, missing product rules repeatedly caused architectural rework in areas like user identity modeling, synchronization behavior, process death handling, and error modeling. As the intended user experience became clearer, previously reasonable abstractions no longer aligned with the new product requirements and had to be redesigned or split apart.
+
+It was difficult to make low-level implementation decisions, product-level architectural decisions, and MVP scope decisions at the same time.
+
+I paused feature development and started treating the project more like a real product. I wrote a [specification](https://github.com/timurgilfanov/messenger/blob/main/docs/Specification.md) to define the minimum set of features, rules, and constraints needed to support the user experience I wanted to build. It covered business rules, system constraints, UX requirements, and conceptual domain models. After that, I created a roadmap to gradually align the implementation with the specification.
+
+This also changed how I approached architecture itself. Architecture decisions became downstream from product requirements instead of being driven by frameworks, patterns, or implementation convenience.
+
+The specification also became useful when working with coding agents because feature planning discussions could reference documented product rules, constraints, and domain concepts instead of relying only on partially implemented code or implicit assumptions.
 
 ## CI and testing strategy to catch regressions
 With the complexity of the project rises number on things that could be broken. It's hard to expect from engineers to keep all of them in mind. Later broken thigs found — more it costs. Solution is to write unit and integration tests to find regressions and run them early. We cannot run all tests on each commit localy, but run fast and relevant tests on each commit, and all tests to gate PR merge seems reasonable default.
