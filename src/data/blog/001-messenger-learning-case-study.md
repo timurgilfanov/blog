@@ -15,6 +15,8 @@ A few months later, after a failed interview, the project direction expanded. I 
 
 After a year, the most valuable outcome was not the app itself, but how much my understanding of engineering processes changed.
 
+## Table of contents
+
 ## Shared ownership in larger Android teams
 Larger Android teams optimize for different things than solo or small-team projects. The challenge is no longer only feature delivery — it becomes coordination, predictability, and consistency.
 
