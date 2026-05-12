@@ -86,15 +86,13 @@ CI gradually evolved into a staged verification pipeline with multiple verificat
 
 During this project, coding agents gradually became part of my daily development workflow. I started with using Claude Code and later Codex mostly for isolated code generation tasks during implementation.
 
-As the capabilities of the agents evolved, my workflow evolved with them. Instead of treating them only as code generators, I started using them more as implementation and review helpers to reduce repetitive work, speed up iteration, and improve the overall quality of the result.
+As the capabilities of the agents evolved, my workflow evolved with them. Instead of treating them only as code generators, I started using them to automate larger parts of implementation work in order to reduce feature development time and improve the quality of the final result.
 
-This shifted my own role away from writing every implementation detail manually and more toward specification, planning, review, and workflow design. A large part of the work became building enough project context and development constraints that agents could operate predictably: architecture rules, specifications, testing strategy, repository conventions, CI checks, and reusable workflows.
+Many of the practices introduced earlier in the project — architecture rules, specifications, testing strategy, repository conventions, CI checks, and reusable workflows — also made coding-agent workflows more predictable and consistent.
 
-I also started building small automation and harness tooling around the agents themselves to improve iteration speed and reduce review overhead. At one point, this included experimenting with [ralphex](https://github.com/umputun/ralphex), an extended Ralph loop orchestration tool for autonomous plan execution and multi-agent review.
+I also experimented with workflows where multiple coding agents reviewed and refined generated changes. At one point, this included using [ralphex](https://github.com/umputun/ralphex), an extended Ralph loop orchestration tool for autonomous plan execution and multi-agent review. The results have been mostly positive, and I use Claude Code directly as a fallback.
 
-The goal was not fully autonomous implementation, but creating workflows where generated changes already align reasonably well with project conventions before review begins.
-
-This reinforced many of the same lessons from the rest of the project. Coding agents become much more effective when architectural boundaries, ownership rules, requirements, and development processes are already explicit. In practice, many problems that appear to be AI quality problems are actually missing specification and coordination problems inside the project itself.
+This gradually shifted my role away from writing every implementation detail manually and more toward planning, review, and workflow design, while still keeping final responsibility for requirements, architecture, and validation.
 
 ## Conclusion 
 The most important lesson from this project was that maintainable architecture is not created by adopting specific patterns, frameworks, or libraries. It emerges from making product rules, ownership boundaries, architectural decisions, and development workflows explicit enough that multiple engineers can evolve the system predictably over time.
