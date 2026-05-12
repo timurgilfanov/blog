@@ -1,7 +1,9 @@
 ---
 title: One Year Rebuilding My Understanding of Android Architecture
 description: Lessons from a year-long Android showcase project about maintainable architecture, shared ownership, requirements, testing, CI, and AI-assisted development workflows.
-pubDatetime: 2026-05-12T00:29:00Z
+slug: one-year-rebuilding-android-architecture
+pubDatetime: 2026-05-11T21:29:00Z
+modDatetime: 2026-05-12T08:17:00Z
 featured: true
 draft: false
 ---
