@@ -68,13 +68,11 @@ The specification also became useful when working with coding agents because fea
 
 ## Testing became a staged verification system
 
-I started building automated testing and CI from the beginning of the project because even relatively small applications accumulate more behaviors and interactions than engineers can reliably validate manually during every change.
+As the project grew, I realized that treating testing as simply “run all tests in CI” did not scale well. Different categories of failures required different levels of confidence, execution environments, and runtime costs.
 
-At first, testing seemed straightforward: write unit and integration tests and run them in CI before merge. As the project grew, this approach stopped scaling well. Different kinds of failures required different levels of confidence, execution environments, and runtime costs.
+Fast local feedback, pull request validation, emulator-based verification, and release confidence all optimized for different trade-offs. Running every level of verification during every change would slow down development significantly, while relying only on fast tests would leave important regressions undetected until much later.
 
-Running all verification locally on every change would dramatically slow down development, while relying only on fast tests would leave large categories of regressions undetected until much later. This forced me to think about testing less as a collection of individual tests and more as a verification strategy with explicit trade-offs between confidence, verification cost, and feedback speed.
-
-### Different failures require different verification
+This pushed me to think about testing less as individual tests and more as a staged verification strategy.
 
 To make these trade-offs explicit, I introduced a [testing strategy](https://github.com/timurgilfanov/messenger/blob/main/docs/Testing%20Strategy.md) document defining:
 - which categories of tests should exist,
@@ -82,9 +80,7 @@ To make these trade-offs explicit, I introduced a [testing strategy](https://git
 - where and when they should run,
 - and which failures should block merges or releases.
 
-This helped separate fast feedback from high-confidence verification instead of treating all tests as equally important during every stage of development.
-
-CI evolved into a staged verification pipeline with multiple verification layers optimized for different execution environments, confidence levels, and runtime costs. Instead of simply running “all tests,” the pipeline executes different levels of validation at different lifecycle stages based on the confidence and cost requirements of the change.
+CI gradually evolved into a staged verification pipeline with multiple verification layers optimized for different confidence levels, execution environments, and runtime costs. Instead of simply running “all tests,” the pipeline executes different levels of validation at different stages of development based on the confidence requirements and cost of the change.
 
 ## Coding agents changed how I think about implementation workflows
 
