@@ -97,7 +97,7 @@ I also experimented with workflows where multiple coding agents reviewed and ref
 This gradually shifted my role away from writing every implementation detail manually and more toward planning, review, and workflow design, while still keeping final responsibility for requirements, architecture, and validation.
 
 ## Conclusion 
-The most important lesson from this project was that maintainable architecture is not created by adopting specific patterns, frameworks, or libraries. It emerges from making product rules, ownership boundaries, architectural decisions, and development workflows explicit enough that multiple engineers can evolve the system predictably over time.
+The most important lesson from this project was that maintainable architecture is not created by adopting specific patterns, frameworks, or libraries. It emerges from making product rules, ownership boundaries, and architectural decisions explicit enough that multiple engineers can evolve the system predictably over time.
 
 Many of the problems I encountered were not caused by incorrect technology choices, but by missing constraints, implicit assumptions, or unclear coordination rules. As the project evolved, architecture became less about finding “correct” abstractions and more about reducing long-term coordination and maintenance costs.
 
