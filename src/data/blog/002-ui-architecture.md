@@ -144,7 +144,7 @@ The core idea was simple:
 
 The current rule in the project states:
 
-> All ordering rules (e.g., "last write wins", "paging does not overlap", "search clears paging") MUST be implemented exclusively inside the actor. The actor is the only authority to coordinate async work and to commit UI state updates. 
+> All ordering rules (e.g., "last write wins", "paging does not overlap", "search clears paging") MUST be implemented exclusively inside the actor. The actor is the only authority to coordinate async work and to commit UI state updates.
 
 The important part is not “using MVI.”
 

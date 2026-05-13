@@ -26,3 +26,6 @@ pnpm-debug.log*
 # pagefind
 
 public/pagefind
+
+# preparation materials for posts
+src/data/materials/
