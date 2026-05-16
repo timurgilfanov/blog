@@ -1,0 +1,1 @@
+I spent a year rebuilding my understanding of maintainable Android architecture through a Messenger showcase app. The biggest lessons was about what drives architecture, shared ownership, testing strategy, CI, and AI-assisted workflows.
