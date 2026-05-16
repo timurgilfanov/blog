@@ -42,25 +42,33 @@ I also introduced Architecture Rules (ARs) for project-wide patterns that should
 
 These documents became increasingly useful not only for engineers, but also for coding agents, because both require clear and durable project context to work predictably in a shared codebase.
 
-## Architecture complexity should match real problems
+## UI architecture complexity should match real problems
 At the beginning of the project, I did not have a clear understanding of UI architecture: why MVI exists, what problems it solves compared to MVVM, and when its additional complexity is justified.
 
-Because I wanted to try MVI and avoid inventing architecture from scratch, I adopted an external UI architecture dependency and followed its documentation and examples. At that stage, this felt like a reasonable shortcut: the project needed a consistent structure, and the library appeared to provide one.
+Because I wanted to try MVI and avoid inventing architecture from scratch, I adopted an external UI architecture dependency and followed its documentation and examples. At that stage, this felt like a reasonable shortcut: the project needed a consistent structure, and the framework appeared to provide one.
 
 For the first months, I mostly treated the chosen architecture as an implementation pattern rather than a set of trade-offs. The consistent structure helped, but I still ran into UI state correctness problems. In one case, concurrent chat updates and text input updates produced subtle ordering issues where stale state could temporarily override newer UI input. In another, trying to store mutable Compose state inside immutable reducers created increasing architectural friction between Compose snapshots and the coroutine-based intent pipeline.
 
-The issue was not that the library itself was wrong, but that I did not yet understand how to use it correctly when real screen behavior moved beyond the examples described in the documentation.
+The issue was not that the framework itself was wrong, but that I did not yet understand how to use it correctly when real screen behavior moved beyond the examples described in the documentation.
 
 The deeper reflection started later, after a failed interview about six months into the project. Interview discussions exposed a gap in how I reasoned about Android UI architecture. I was saying that architecture should match screen complexity, but “complexity” was too vague to be useful. I needed a more concrete way to explain which requirements justify additional architectural machinery.
 
-To make this practical, I started from the same example screen requirements and tried implementing them with several UI architecture approaches: simpler MVVM-style state management, stricter Unidirectional Data Flow (UDF), and actor/reducer-based MVI. Instead of comparing patterns abstractly, I used the number and location of conditions as a pressure point: more scattered conditions usually mean more fragile code.
+To make this practical, I started from the same example screen requirements and tried implementing them with several UI architecture approaches:
+- loose ViewModel state ownership,
+- lightweight UDF with `StateFlow` and direct event handlers,
+- UDF with explicit ordering guards such as jobs, tokens, and `flatMapLatest`,
+- framework-style MVI with intents and reducers,
+- MVI-like action/intent/reducer flow without full serialization,
+- and finally actor/reducer-based MVI with a single ordered state pipeline. 
+
+Instead of comparing patterns abstractly, I used the number and location of conditions as a pressure point: more scattered conditions usually mean more fragile code.
 
 For each approach, I looked at how many places and conditions were needed to enforce the same ordering rules and how the solution would scale when new requirements were added. This made the trade-off easier to explain: if the same rules require many scattered checks across handlers, callbacks, or reducers, the architecture is absorbing complexity poorly. That conclusion became the basis for an [architecture rule](https://github.com/timurgilfanov/messenger/blob/main/docs/architecture/AR-01-single-authority-for-ordering-rules.md): when actor/reducer-based MVI is used, ordering rules should live in the actor instead of being duplicated across multiple handlers.
 
 After reviewing Messenger’s UI architecture by checking whether each screen actually needed serialized ordering rules, I removed the external UI architecture dependency and moved screens to a lighter UDF style: ViewModels expose immutable UI state through `StateFlow` and one-off side effects through a `Channel`-backed `Flow`. The reviewed screens did not create enough pressure to justify actor/reducer machinery: most only observed state, and the few ordering needs, such as language last-write-wins or chat send/input coordination, could be handled with small localized mechanisms. More complex flows still have a documented path for serialized state coordination when needed. This also made architectural decisions easier to communicate and review, which became increasingly important as I started thinking more about shared ownership and long-term maintainability.
 
 ## Requirements should drive architecture
-At the beginning of the project, I approached development screen by screen and made product decisions during implementation. This created repeated architectural rework because many technical decisions depended on product rules that had never been defined explicitly.
+The same pattern appeared at a broader product level. At the beginning of the project, I approached development screen by screen and made product decisions during implementation. This created repeated architectural rework because many technical decisions depended on product rules that had never been defined explicitly.
 
 For example, missing product rules repeatedly caused architectural rework in areas like user identity modeling, synchronization behavior, process death handling, and error modeling. As the intended user experience became clearer, previously reasonable abstractions no longer aligned with the new product requirements and had to be redesigned or split apart.
 
