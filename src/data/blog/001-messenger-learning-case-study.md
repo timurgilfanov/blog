@@ -3,7 +3,7 @@ title: One Year Rebuilding My Understanding of Android Architecture
 description: Lessons from a year-long Android showcase project about maintainable architecture, shared ownership, requirements, testing, CI, and AI-assisted development workflows.
 slug: one-year-rebuilding-android-architecture
 pubDatetime: 2026-05-11T21:29:00Z
-modDatetime: 2026-05-12T08:17:00Z
+modDatetime: 2026-05-16T12:04:14Z
 featured: true
 draft: false
 ---
@@ -45,15 +45,19 @@ These documents became increasingly useful not only for engineers, but also for 
 ## Architecture complexity should match real problems
 At the beginning of the project, I did not have a clear understanding of UI architecture: why MVI exists, what problems it solves compared to MVVM, and when its additional complexity is justified.
 
-I adopted an external dependency that implemented UI architecture and followed its documentation and examples. The first major problems appeared when screens started requiring coordination between multiple asynchronous state updates that were not covered by the “happy path” examples from the library. In one case, concurrent chat updates and text input updates produced subtle ordering issues where stale state could temporarily override newer UI input. In another, trying to store mutable Compose state inside immutable reducers created increasing architectural friction between Compose snapshots and the coroutine-based intent pipeline.
+Because I wanted to try MVI and avoid inventing architecture from scratch, I adopted an external UI architecture dependency and followed its documentation and examples. At that stage, this felt like a reasonable shortcut: the project needed a consistent structure, and the library appeared to provide one.
 
-Without understanding the guarantees and constraints introduced by the architecture, it became difficult to reason about how state changes propagated through the UI and how concurrent operations interacted with each other.
+For the first months, I mostly treated the chosen architecture as an implementation pattern rather than a set of trade-offs. The consistent structure helped, but I still ran into UI state correctness problems. In one case, concurrent chat updates and text input updates produced subtle ordering issues where stale state could temporarily override newer UI input. In another, trying to store mutable Compose state inside immutable reducers created increasing architectural friction between Compose snapshots and the coroutine-based intent pipeline.
 
-During one interview, I realized I could not clearly explain the architectural trade-offs behind different UI architecture approaches and examples. That pushed me to study this area more deeply: MVVM, MVI, actor/reducer patterns, state ownership, and concurrency coordination in UI state management.
+The issue was not that the library itself was wrong, but that I did not yet understand how to use it correctly when real screen behavior moved beyond the examples described in the documentation.
 
-The practical result was not switching from one “correct” architecture to another, but understanding which concrete engineering problems different approaches solve. As part of this process, I wrote an [architecture rule](https://github.com/timurgilfanov/messenger/blob/main/docs/architecture/AR-01-single-authority-for-ordering-rules.md) describing when actor/reducer-based MVI is justified for ordering invariants and when simpler approaches are enough.
+The deeper reflection started later, after a failed interview about six months into the project. Interview discussions exposed a gap in how I reasoned about Android UI architecture. I was saying that architecture should match screen complexity, but “complexity” was too vague to be useful. I needed a more concrete way to explain which requirements justify additional architectural machinery.
 
-Eventually, I migrated the application from a dependency-heavy MVI solution to a lighter custom implementation without external architectural dependencies. Screens without complex coordination requirements now use simpler state management, while more complex flows still have a clear path for serialized state coordination when needed. This also made architectural decisions easier to communicate and review, which became increasingly important as I started thinking more about shared ownership and long-term maintainability.
+To make this practical, I started from the same example screen requirements and tried implementing them with several UI architecture approaches: simpler MVVM-style state management, stricter Unidirectional Data Flow (UDF), and actor/reducer-based MVI. Instead of comparing patterns abstractly, I used the number and location of conditions as a pressure point: more scattered conditions usually mean more fragile code.
+
+For each approach, I looked at how many places and conditions were needed to enforce the same ordering rules and how the solution would scale when new requirements were added. This made the trade-off easier to explain: if the same rules require many scattered checks across handlers, callbacks, or reducers, the architecture is absorbing complexity poorly. That conclusion became the basis for an [architecture rule](https://github.com/timurgilfanov/messenger/blob/main/docs/architecture/AR-01-single-authority-for-ordering-rules.md): when actor/reducer-based MVI is used, ordering rules should live in the actor instead of being duplicated across multiple handlers.
+
+After reviewing Messenger’s UI architecture by checking whether each screen actually needed serialized ordering rules, I removed the external UI architecture dependency and moved screens to a lighter UDF style: ViewModels expose immutable UI state through `StateFlow` and one-off side effects through a `Channel`-backed `Flow`. The reviewed screens did not create enough pressure to justify actor/reducer machinery: most only observed state, and the few ordering needs, such as language last-write-wins or chat send/input coordination, could be handled with small localized mechanisms. More complex flows still have a documented path for serialized state coordination when needed. This also made architectural decisions easier to communicate and review, which became increasingly important as I started thinking more about shared ownership and long-term maintainability.
 
 ## Requirements should drive architecture
 At the beginning of the project, I approached development screen by screen and made product decisions during implementation. This created repeated architectural rework because many technical decisions depended on product rules that had never been defined explicitly.
