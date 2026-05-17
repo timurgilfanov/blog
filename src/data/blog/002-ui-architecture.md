@@ -334,6 +334,10 @@ Architecture is a trade-off. The question is whether the structure removes more 
 
 The companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) is intended as additional material for this post. It follows the same sequence of pressures:
 
+The repository also includes a minimal runnable Android sample app for visual demos. The async search, MVVM guard,
+and actor/reducer ordering examples have deterministic JVM tests, so this post can stay focused on architecture rather
+than build setup.
+
 | Example | Purpose |
 |---|---|
 | [`examples/01-state-in-view`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/01-state-in-view) | Local Compose state and simple filtering |
