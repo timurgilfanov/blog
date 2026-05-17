@@ -13,6 +13,8 @@ At first, I treated patterns like MVVM, UDF, and MVI mostly as implementation st
 
 A simple screen does not need heavy architecture. A screen with local visual state can keep that state local. A screen with several UI elements depending on the same values needs a clearer source of truth. A screen with bidirectional UI synchronization needs an explicit owner for that interaction. A screen with overlapping asynchronous operations and ordering rules needs even stronger coordination.
 
+For screen state management, coordination requirements are one of the strongest signals for how much architecture a screen needs. They are not the only signal: lifecycle, navigation, testing strategy, modularity, team conventions, and platform constraints still matter.
+
 This post follows one ordinary Android screen as requirements grow. The goal is not to prove that one pattern should be used everywhere. The goal is to show how architecture pressure appears step by step.
 
 ## Table of contents
@@ -25,7 +27,7 @@ At the beginning, it only displays a list. Then we add a search query, filters, 
 
 I will also use a smaller side example for feedback loops: category chips synchronized with a sectioned `LazyColumn`. That example is more precise than using filter visibility as a feedback-loop example, because it has two UI elements that can drive each other in both directions.
 
-The companion `ui-architecture` repository contains experiments for these stages. The examples are intentionally small because the point is not framework code; the point is to make architectural pressure visible.
+The companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) contains experiments for these stages. The examples are intentionally small because the point is not framework code; the point is to make architectural pressure visible.
 
 ## Stage 1: Local state is enough
 
@@ -38,6 +40,8 @@ The first requirement is simple:
 In this version, keeping the query as local Compose state is reasonable. The query is used by the text field and by the derived filtered list. There is no repository call, loading state, pagination, retry, or ordering rule.
 
 Local state is not automatically a code smell. It becomes risky when other parts of the screen start depending on it, changing it, or coordinating with it.
+
+There is also a lifetime caveat. If the query must survive process death, deep links, or navigation restoration, local Compose state may no longer be enough. This stage only means the state is local in behavior, not necessarily in lifetime.
 
 At this stage:
 
@@ -73,8 +77,7 @@ That creates bug-prone intermediate states. If every mutation has to update seve
 - filters changed, but the list still reflects old filters;
 - filters were cleared, but `Clear filters` is still visible;
 - all filters are selected, but the `All` chip is not selected;
-- the list is empty, but the empty state is hidden;
-- the empty state is visible while loading is already in progress.
+- the list is empty, but the empty state is hidden.
 
 The fix is not MVI. The fix is simpler: distinguish source state from derived state.
 
@@ -89,7 +92,9 @@ Other values should be derived:
 - `isAllSelected` from `selectedFilters`;
 - `filteredItems` from items, `query`, and `selectedFilters`;
 - `isClearFiltersVisible` from `selectedFilters` and maybe `query`;
-- `isEmptyStateVisible` from filtered items, loading, and error state.
+- `isEmptyStateVisible` from filtered items.
+
+Later, when remote loading and errors appear, those become additional inputs to empty-state visibility. At this stage, the point is only that empty state is derived from the current local source state.
 
 The lesson is that `Clear filters` visibility is not independent state. It is a derived fact about the current filter state. Treating derived facts as separate mutable sources of truth increases synchronization cost.
 
@@ -109,7 +114,7 @@ There are two directions:
 - chip selection changes list scroll position;
 - list scroll position changes chip selection.
 
-If both sides are modeled as independent mutable state and synchronized with effects, the behavior becomes hard to reason about. A chip click starts an animated scroll. During the animation, the list passes through intermediate sections. A scroll observer may update the selected chip to those intermediate sections. That selected-chip update may trigger another scroll. Then guards start appearing: `isProgrammaticScroll`, `ignoreScrollUpdates`, `pendingCategory`, or “only update after scroll settles.”
+If both sides are modeled as independent mutable state and synchronized with effects, the behavior becomes hard to reason about. A chip click starts an animated scroll. During the animation, the list passes through intermediate sections. A scroll observer may update the selected chip to those intermediate sections. If selected chip state is also used as the trigger for programmatic scrolling, those intermediate selected-chip updates can start additional scroll commands. Then guards start appearing: `isProgrammaticScroll`, `ignoreScrollUpdates`, `pendingCategory`, or “only update after scroll settles.”
 
 This is a real feedback loop:
 
@@ -125,7 +130,7 @@ The architectural response is to choose one authority for the interaction. For e
 - treat chip clicks as commands to scroll rather than as a second permanent source of truth;
 - keep programmatic-scroll coordination in one place if product behavior requires it.
 
-The same problem existed even more naturally in classic Android Views and two-way Data Binding. Consider a `Select all` checkbox and several individual filter checkboxes. The user checks `Select all`, the ViewModel marks every filter selected, Data Binding updates every checkbox, checkbox listeners fire, the ViewModel receives individual filter changes, recalculates `allSelected`, and updates the `Select all` checkbox again. Real projects often added guards by detaching listeners, ignoring programmatic updates, or comparing old and new values.
+The same problem existed even more naturally in classic Android Views, listener binding, and two-way Data Binding-style synchronization. Consider a `Select all` checkbox and several individual filter checkboxes. The user unchecks one individual filter, the ViewModel emits `allSelected == false`, binding sets `selectAll.isChecked = false`, and that programmatic update triggers the `Select all` listener. The ViewModel may then clear every filter, not only the one the user changed. Real projects often added guards by detaching listeners, ignoring programmatic updates, or comparing old and new values.
 
 Compose changes the mechanics, but not the architectural lesson: if two UI states drive each other, one part of the system must own the coordination.
 
@@ -146,8 +151,9 @@ For the catalog screen, the View can report events like:
 - `QueryChanged`;
 - `FilterToggled`;
 - `AllFiltersClicked`;
-- `ClearFiltersClicked`;
-- `CategoryChipClicked`.
+- `ClearFiltersClicked`.
+
+The category-scroll feedback loop is handled separately in the companion example. This catalog UDF stage keeps only query and filter events.
 
 The ViewModel decides how those events change state. The View should not directly mutate `selectedFilters`, manually update `isClearFiltersVisible`, or synchronize chip state and list state in both directions.
 
@@ -159,7 +165,7 @@ The important shift is this:
 - events go up;
 - transitions happen in one place.
 
-UDF breaks UI feedback loops by preventing the View from becoming a hidden state machine.
+UDF helps prevent hidden UI feedback loops by preventing the View from becoming an implicit state machine.
 
 ## Stage 5: One async pipeline
 
@@ -228,9 +234,13 @@ Several repair attempts are possible:
 | Two Flow pipelines | Models search latest-wins clearly | Paging still coordinates with current state |
 | State machine | Centralizes events and transitions | This is already close to actor/reducer |
 
+The companion `examples/07-mvvm-with-guards` folder keeps only the jobs and token versions short. The fuller `MVVM/` project contains the two-pipeline and state-machine experiments.
+
 These approaches are not wrong. For some screens, one of them is the right trade-off. The useful signal is whether each new requirement adds another guard, token, flag, or special case in a different part of the class.
 
 When local fixes keep spreading the same ordering rule across the implementation, the architecture is telling us something: the screen needs a clearer coordination authority.
+
+For example, a direct ViewModel might guard page success with “does this generation still match?” and “does this query still match?” checks in the page callback. An actor/reducer version moves that decision to the actor boundary: stale page results are not emitted as commit-worthy results, and valid results go through the single reducer path.
 
 ## Stage 8: Actor/reducer MVI
 
@@ -254,7 +264,7 @@ In an actor/reducer design:
 
 The important part is not the names. The important part is ownership.
 
-If ordering rules are the reason for MVI, then ordering rules must live in the actor. If any handler can still commit state directly, the rule can be bypassed. If every async callback can update state independently, the reducer is only ceremony.
+If ordering rules are the reason for MVI, then those rules must live inside the actor/reducer boundary. In this style of actor/reducer MVI, the actor owns allowed work and request validity. If any handler can still commit state directly, the rule can be bypassed. If every async callback can update state independently, the reducer is only ceremony.
 
 For the search screen, the actor can own questions like:
 
@@ -305,7 +315,7 @@ The stages above are not strict rules. They are signals.
 | Requirement pressure | Architecture that may be enough |
 |---|---|
 | Independent visual state | Local Compose state |
-| State must survive configuration change | ViewModel |
+| State must survive beyond composition | `rememberSaveable`, ViewModel, or persistence depending on lifetime |
 | Values are derived from the same source | Single source of truth and derived state |
 | View directly mutates state with dependents | UDF boundary |
 | Two UI elements synchronize each other both ways | One interaction authority or UDF coordinator |
@@ -322,18 +332,18 @@ Architecture is a trade-off. The question is whether the structure removes more 
 
 ## Companion repository
 
-The companion `ui-architecture` repository is intended as additional material for this post. It follows the same sequence of pressures:
+The companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) is intended as additional material for this post. It follows the same sequence of pressures:
 
 | Example | Purpose |
 |---|---|
-| `01-state-in-view` | Local Compose state and simple filtering |
-| `02-derived-state-source-of-truth` | Filters, `All` chip, empty state, and `Clear filters` |
-| `03-feedback-loop-compose-category-scroll` | Category chips synchronized with `LazyColumn` scroll |
-| `04-feedback-loop-android-views-select-all` | Classic Android Views/Data Binding `Select all` checkbox loop |
-| `05-single-ui-state-udf` | One immutable UI state and explicit UI events |
-| `06-async-search-udf` | Remote search, loading/error, and latest-wins |
-| `07-mvvm-with-guards` | Search plus pagination with jobs, tokens, and guards |
-| `08-mvi-actor-reducer` | Actor owns ordering and reducer commits state |
+| [`examples/01-state-in-view`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/01-state-in-view) | Local Compose state and simple filtering |
+| [`examples/02-derived-state-source-of-truth`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/02-derived-state-source-of-truth) | Filters, `All` chip, empty state, and `Clear filters` |
+| [`examples/03-feedback-loop-compose-category-scroll`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/03-feedback-loop-compose-category-scroll) | Category chips synchronized with `LazyColumn` scroll |
+| [`examples/04-feedback-loop-android-views-select-all`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/04-feedback-loop-android-views-select-all) | Classic Android Views/listener-binding `Select all` checkbox loop |
+| [`examples/05-single-ui-state-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/05-single-ui-state-udf) | One immutable UI state and explicit UI events |
+| [`examples/06-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/06-async-search-udf) | Remote search, loading/error, and latest-wins |
+| [`examples/07-mvvm-with-guards`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/07-mvvm-with-guards) | Search plus pagination with jobs, tokens, and guards |
+| [`examples/08-mvi-actor-reducer`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/08-mvi-actor-reducer) | Actor owns ordering and reducer commits state |
 
 The repository is not meant to be a framework. It is a set of small experiments that make trade-offs visible.
 
@@ -343,6 +353,6 @@ The evolution from local state to MVI is not a story about replacing a bad patte
 
 Local state was correct when the state was local. A single source of truth became useful when several UI elements depended on the same values. UDF became useful when the View needed to stop being a state writer. Actor/reducer MVI became useful only after overlapping async operations introduced ordering rules that were too expensive to keep distributed.
 
-That is the main lesson: UI architecture should be driven by coordination requirements.
+That is the main lesson: for screen state management, UI architecture should be strongly shaped by coordination requirements.
 
 When there is no coordination problem, simple code is usually better. When coordination rules exist, they should be explicit. And when the same rule appears in several handlers, callbacks, and guards, the screen needs a single authority for that rule.
