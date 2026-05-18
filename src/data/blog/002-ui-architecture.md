@@ -13,7 +13,7 @@ I could talk about MVVM, UDF, and MVI as implementation styles, but I was less p
 
 The question I needed to answer was not “Which pattern is better?” but “Which coordination problem does this screen actually have?”
 
-This post follows one ordinary Android screen as requirements grow. The goal is to show how UI architecture pressure appears step by step, from local Compose state to stronger coordination models.
+This post follows one ordinary Android screen as requirements grow. The goal is to show how UI architecture pressure appears step by step, and how each change in architecture can relieve that pressure with the smallest useful increase in complexity.
 
 The longer project context is in the UI architecture section of my previous reflection: [UI architecture complexity should match real problems](/posts/one-year-rebuilding-android-architecture/#ui-architecture-complexity-should-match-real-problems).
 
