@@ -1,10 +1,10 @@
 ---
-title: From Compose State to MVI: Android UI Architecture Driven by Requirements
+title: "From Compose State to MVI: Android UI Architecture Driven by Requirements"
 description: A requirement-driven walkthrough of Android UI architecture evolution from local Compose state, through single UI state and unidirectional data flow, to actor/reducer MVI when async ordering rules appear.
 slug: android-ui-architecture-is-driven-by-coordination-requirements
-pubDatetime: 2026-05-13T00:00:00Z
+pubDatetime: 2026-05-17T00:00:00Z
 featured: false
-draft: true
+draft: false
 ---
 
 In my [previous reflection](/posts/one-year-rebuilding-android-architecture/), I described how working on the Messenger showcase project changed the way I think about maintainable Android architecture. One part of that reflection kept coming back: UI architecture.
@@ -234,7 +234,7 @@ Several repair attempts are possible:
 | Two Flow pipelines | Models search latest-wins clearly | Paging still coordinates with current state |
 | State machine | Centralizes events and transitions | This is already close to actor/reducer |
 
-The companion `examples/07-mvvm-with-guards` folder keeps only the jobs and token versions short. The fuller `MVVM/` project contains the two-pipeline and state-machine experiments.
+The companion `examples/07-mvvm-with-guards` folder keeps simplified versions of these repair attempts together: jobs, tokens, two Flow pipelines, and a small state machine.
 
 These approaches are not wrong. For some screens, one of them is the right trade-off. The useful signal is whether each new requirement adds another guard, token, flag, or special case in a different part of the class.
 
@@ -346,7 +346,7 @@ than build setup.
 | [`examples/04-feedback-loop-android-views-select-all`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/04-feedback-loop-android-views-select-all) | Classic Android Views/listener-binding `Select all` checkbox loop |
 | [`examples/05-single-ui-state-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/05-single-ui-state-udf) | One immutable UI state and explicit UI events |
 | [`examples/06-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/06-async-search-udf) | Remote search, loading/error, and latest-wins |
-| [`examples/07-mvvm-with-guards`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/07-mvvm-with-guards) | Search plus pagination with jobs, tokens, and guards |
+| [`examples/07-mvvm-with-guards`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/07-mvvm-with-guards) | Search plus pagination with jobs, tokens, flow pipelines, state machine, and guards |
 | [`examples/08-mvi-actor-reducer`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/08-mvi-actor-reducer) | Actor owns ordering and reducer commits state |
 
 The repository is not meant to be a framework. It is a set of small experiments that make trade-offs visible.
