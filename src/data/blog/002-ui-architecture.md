@@ -43,8 +43,6 @@ In this version, keeping the query as local Compose state is reasonable. The que
 
 Local state is not automatically a code smell. It becomes risky when other parts of the screen start depending on it, changing it, or coordinating with it.
 
-There is also a lifetime caveat. If the query must survive process death, deep links, or navigation restoration, local Compose state may no longer be enough. This stage only means the state is local in behavior, not necessarily in lifetime.
-
 At this stage:
 
 - `query` has one owner;
@@ -53,7 +51,7 @@ At this stage:
 - there are no delayed results;
 - recomposition is enough to update the UI.
 
-Adding a ViewModel or MVI store here would mostly add structure without removing much complexity. The simplest architecture still matches the problem.
+Adding a ViewModel or MVI store here would mostly add structure without solving any coordination problem. The simplest architecture still matches the problem.
 
 ## Stage 2: Derived state needs one source of truth
 
