@@ -19,15 +19,17 @@ The longer project context is in the UI architecture section of my previous refl
 
 ## Table of contents
 
-## The example screen
+## The screen we will evolve
 
 The main example is intentionally common: a searchable catalog screen.
 
-At the beginning, it only displays a list. Then we add a search query, filters, an empty state, remote loading, pagination, retry, and analytics. None of these requirements are unusual in Android applications. The interesting part is how they change the relationships between UI elements, state, and asynchronous work.
+I start with a simple list and add requirements one by one: local search, filters, empty state, remote loading, pagination, and retry. The point is not the screen itself, but how each requirement changes the relationship between UI elements, state, and asynchronous work.
 
-I will also use a smaller side example for feedback loops: category chips synchronized with a sectioned `LazyColumn`. That example is more precise than using filter visibility as a feedback-loop example, because it has two UI elements that can drive each other in both directions.
+You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same sequence. If you want to inspect code while reading, open the numbered `examples/` folders. For example, `examples/01-state-in-view` matches the first stage, `examples/06-async-search-udf` matches the async-search stage, and `examples/08-mvi-actor-reducer` matches the final actor/reducer example.
 
-The companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) contains experiments for these stages. The examples are intentionally small because the point is not framework code; the point is to make architectural pressure visible.
+For feedback loops, I use a smaller side example: category chips synchronized with a sectioned `LazyColumn`. That example is more precise than filter visibility because chip selection and scroll position can drive each other in both directions. The repository also includes a classic Android Views/listener-binding version of the same feedback-loop problem.
+
+The runnable `sample-app` is optional. It exists so you can interact with the examples visually. The tests are focused on the async ordering examples, where behavior is harder to verify by inspection alone.
 
 ## Stage 1: Local state is enough
 
