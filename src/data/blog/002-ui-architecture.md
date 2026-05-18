@@ -53,7 +53,7 @@ At this stage:
 
 Adding a ViewModel or MVI store here would mostly add structure without solving any coordination problem. The simplest architecture still matches the problem.
 
-## Stage 2: Derived state needs one source of truth
+## Stage 2: Separate source state from derived state
 
 Now the screen gets filters:
 
@@ -62,9 +62,7 @@ Now the screen gets filters:
 - an empty state;
 - a `Clear filters` action.
 
-This is the first real pressure, but it is not yet a feedback loop. It is a source-of-truth and derived-state problem.
-
-It may be tempting to store every visible fact as mutable state:
+Several visible values now depend on the same inputs. It may be tempting to store every visible fact as mutable state:
 
 - selected filters;
 - whether the `All` chip is selected;
@@ -76,16 +74,16 @@ That creates bug-prone intermediate states. If every mutation has to update seve
 
 - filters changed, but the list still reflects old filters;
 - filters were cleared, but `Clear filters` is still visible;
-- all filters are selected, but the `All` chip is not selected;
+- no filters are selected, but the `All` chip is not selected;
 - the list is empty, but the empty state is hidden.
 
-The fix is not MVI. The fix is simpler: distinguish source state from derived state.
+This is the first real pressure: the screen has several values that must stay consistent with the same source inputs. The pressure is relieved with a small rule: only source values are mutable; everything else is computed from them.
 
 For this screen, the mutable source state might be:
 
 - `query`;
 - `selectedFilters`;
-- the source item list.
+- the source list of items.
 
 Other values should be derived:
 
