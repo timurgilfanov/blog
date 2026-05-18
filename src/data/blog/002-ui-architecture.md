@@ -7,15 +7,15 @@ featured: false
 draft: false
 ---
 
-In my [previous reflection](/posts/one-year-rebuilding-android-architecture/), I described how working on the Messenger showcase project changed the way I think about maintainable Android architecture. One part of that reflection kept coming back: UI architecture.
+A failed interview made me realize that my understanding of Android UI architecture was too pattern-oriented.
 
-At first, I treated patterns like MVVM, UDF, and MVI mostly as implementation styles. Later, after working through real screen behavior, I started seeing them differently. The important question was not “Which pattern is better?” but “Which coordination problem does this screen actually have?”
+I could talk about MVVM, UDF, and MVI as implementation styles, but I was less precise about the requirements that make each style useful. Saying “use MVI for complex screens” was not enough, because “complex” can mean many different things.
 
-A simple screen does not need heavy architecture. A screen with local visual state can keep that state local. A screen with several UI elements depending on the same values needs a clearer source of truth. A screen with bidirectional UI synchronization needs an explicit owner for that interaction. A screen with overlapping asynchronous operations and ordering rules needs even stronger coordination.
+The question I needed to answer was not “Which pattern is better?” but “Which coordination problem does this screen actually have?”
 
-For screen state management, coordination requirements are one of the strongest signals for how much architecture a screen needs. They are not the only signal: lifecycle, navigation, testing strategy, modularity, team conventions, and platform constraints still matter.
+This post follows one ordinary Android screen as requirements grow. The goal is to show how UI architecture pressure appears step by step, from local Compose state to stronger coordination models.
 
-This post follows one ordinary Android screen as requirements grow. The goal is not to prove that one pattern should be used everywhere. The goal is to show how architecture pressure appears step by step.
+The longer project context is in the UI architecture section of my previous reflection: [UI architecture complexity should match real problems](/posts/one-year-rebuilding-android-architecture/#ui-architecture-complexity-should-match-real-problems).
 
 ## Table of contents
 
