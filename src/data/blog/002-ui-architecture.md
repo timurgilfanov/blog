@@ -145,9 +145,23 @@ The same problem existed even more naturally in classic Android Views, listener 
 
 Compose changes the mechanics, but not the architectural lesson: if two UI states drive each other, one part of the system must own the coordination.
 
-## Stage 4: UDF establishes state ownership
+## Stage 4: UDF establishes transition ownership
 
-After derived state and feedback loops appear, the next useful step is Unidirectional Data Flow.
+This stage does not add new user-facing behavior. The catalog still has search, filters, an `All` chip, empty state, and `Clear filters`.
+
+The new requirement is maintainability: the transition rules should have one owner. The screen is now large enough that keeping those rules inside UI callbacks makes the View responsible for behavior, not only rendering.
+
+The rules are small, but they are real:
+
+- typing in the search field changes `query`;
+- tapping a filter chip adds or removes that filter;
+- tapping `All` means no filter is selected;
+- tapping `Clear filters` resets both `query` and `selectedFilters`;
+- visible values stay derived from the current source state.
+
+The source-of-truth rule can still be applied locally. For a small screen, direct callbacks are valid. UDF becomes useful when those transition rules should be centralized, tested, or protected from spreading across child composables.
+
+The question is no longer only “Which values are derived?” It becomes “Who owns state transitions?”
 
 In lightweight UDF:
 
@@ -164,11 +178,11 @@ For the catalog screen, the View can report events like:
 - `AllFiltersClicked`;
 - `ClearFiltersClicked`.
 
-The category-scroll feedback loop is handled separately in the companion example. This catalog UDF stage keeps only query and filter events.
+The ViewModel decides how those events change source state. The View no longer owns rules such as “toggling a filter adds or removes it,” “All clears selected filters,” or “Clear filters resets both query and filters.” Those rules move behind an explicit event boundary.
 
-The ViewModel decides how those events change state. The View should not directly mutate `selectedFilters`, manually update `isClearFiltersVisible`, or synchronize chip state and list state in both directions.
+The category-scroll feedback loop is handled separately in the companion example. UDF does not choose the scroll authority by itself; the one-authority rule from Stage 3 still applies. What UDF does is prevent the View from becoming the place where unrelated transition rules quietly accumulate.
 
-This is useful before full MVI. Direct event-handler methods are often enough. A ViewModel that exposes one read-only `StateFlow<UiState>` and accepts explicit events already solves many ownership problems.
+This is useful before full MVI. Direct event-handler methods are often enough. A ViewModel that exposes one read-only `StateFlow<UiState>` and accepts explicit events already creates a clear transition owner.
 
 The important shift is this:
 
@@ -176,7 +190,7 @@ The important shift is this:
 - events go up;
 - transitions happen in one place.
 
-UDF helps prevent hidden UI feedback loops by preventing the View from becoming an implicit state machine.
+UDF reduces hidden state machines by making the View a renderer and event sender instead of the owner of state transitions.
 
 ## Stage 5: One async pipeline
 
