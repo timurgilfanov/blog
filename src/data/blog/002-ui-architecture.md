@@ -25,9 +25,9 @@ The main example is intentionally common: a searchable catalog screen.
 
 I start with a simple list and add requirements one by one: local search, filters, empty state, remote loading, pagination, and retry. The point is not the screen itself, but how each requirement changes the relationship between UI elements, state, and asynchronous work.
 
-You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same sequence. If you want to inspect code while reading, open the numbered `examples/` folders. For example, `examples/01-state-in-view` matches the first stage, `examples/06-async-search-udf` matches the async-search stage, and `examples/08-mvi-actor-reducer` matches the final actor/reducer example.
+You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same sequence. If you want to inspect code while reading, open the numbered `examples/` folders. For example, `examples/01-state-in-view` matches the first stage, `examples/05-async-search-udf` matches the async-search stage, and `examples/07-mvi-actor-reducer` matches the final actor/reducer example.
 
-For feedback loops, I use a smaller side example: category chips synchronized with a sectioned `LazyColumn`. That example is more precise than filter visibility because chip selection and scroll position can drive each other in both directions. The repository also includes a classic Android Views/listener-binding version of the same feedback-loop problem.
+I also include a side note about feedback loops. It uses a smaller category-navigation example because filter visibility itself does not create a bidirectional interaction. The repository also includes a classic Android Views/listener-binding version of the same feedback-loop problem.
 
 The runnable `sample-app` is optional. It exists so you can interact with the examples visually. The tests are focused on the async ordering examples, where behavior is harder to verify by inspection alone.
 
@@ -96,25 +96,25 @@ Later, when remote loading and errors appear, those become additional inputs to 
 
 The lesson is that `Clear filters` visibility is not independent state. It is a derived fact about the current filter state. Treating derived facts as separate mutable sources of truth increases synchronization cost.
 
-## Stage 3: Feedback loops between UI elements
+## Side note: Feedback loops between UI elements
 
 A feedback loop appears when two stateful parts of the UI drive each other.
 
 This looks similar to the previous stage because both problems involve source-of-truth confusion. The difference is that Stage 2 only had derived values. Here, one derived-looking value can also trigger side effects, so the problem becomes a feedback loop rather than simple derived-state consistency.
 
-A realistic Compose example is a catalog with category navigation:
+A realistic Compose example is category navigation in a sectioned list:
 
-- category chips are shown at the top;
+- category navigation controls are shown at the top;
 - items are grouped by category in a `LazyColumn`;
-- tapping a chip scrolls the list to that category;
-- manually scrolling the list updates the selected chip.
+- tapping a category scrolls the list to that section;
+- manually scrolling the list updates the selected category.
 
 There are two directions:
 
-- chip selection changes list scroll position;
-- list scroll position changes chip selection.
+- selected category changes list scroll position;
+- list scroll position changes selected category.
 
-If both sides are modeled as independent mutable state and synchronized with effects, the behavior becomes hard to reason about. A chip click starts an animated scroll. During the animation, the list passes through intermediate sections. A scroll observer may update the selected chip to those intermediate sections. If selected chip state is also used as the trigger for programmatic scrolling, those intermediate selected-chip updates can start additional scroll commands.
+If both sides are modeled as independent mutable state and synchronized with effects, the behavior becomes hard to reason about. A category click starts an animated scroll. During the animation, the list passes through intermediate sections. A scroll observer may update the selected category to those intermediate sections. If selected category state is also used as the trigger for programmatic scrolling, those intermediate selected-category updates can start additional scroll commands.
 
 This is a real feedback loop:
 
@@ -125,9 +125,9 @@ This is a real feedback loop:
 A local fix usually starts with guard state: `isProgrammaticScroll`, `ignoreScrollUpdates`, `pendingCategory`, a cancellable scroll job, or “only update after scroll settles.” The companion repository includes a guarded intermediate version for this reason. It can reduce visible glitches, but now the screen owns extra coordination rules:
 
 - what happens if the user drags during an animated scroll;
-- whether a canceled scroll should keep the tapped chip selected;
+- whether a canceled scroll should keep the tapped category selected;
 - when the pending category is considered reached;
-- which scroll observations are allowed to update chip state.
+- which scroll observations are allowed to update selected-category state.
 
 Guards are not automatically wrong. For small localized cases, they can be a practical solution. The pressure becomes visible when guard state becomes the main way the interaction is coordinated.
 
@@ -135,11 +135,11 @@ Compose avoids many classic Android View feedback loops because recomposition do
 
 The architectural response is to choose one authority for the interaction. For example:
 
-- treat scroll position as the source of truth and derive the selected chip from the visible section;
-- treat chip clicks as commands to scroll rather than as a second permanent source of truth;
+- treat scroll position as the source of truth and derive the selected category from the visible section;
+- treat category clicks as commands to scroll rather than as a second permanent source of truth;
 - keep programmatic-scroll coordination in one place if product behavior requires it.
 
-This relieves the pressure by removing the second permanent selected-chip source. If product behavior requires the tapped chip to remain selected until scrolling finishes, that rule can still exist, but it should live in one coordinator rather than spread across several effects and callbacks.
+This relieves the pressure by removing the second permanent selected-category source. If product behavior requires the tapped category to remain selected until scrolling finishes, that rule can still exist, but it should live in one coordinator rather than spread across several effects and callbacks.
 
 The same problem existed even more naturally in classic Android Views, listener binding, and two-way Data Binding-style synchronization. Consider a `Select all` checkbox and several individual filter checkboxes. The user unchecks one individual filter, the ViewModel emits `allSelected == false`, binding sets `selectAll.isChecked = false`, and that programmatic update triggers the `Select all` listener. The ViewModel may then clear every filter, not only the one the user changed. Real projects often added guards by detaching listeners, ignoring programmatic updates, or comparing old and new values.
 
@@ -161,7 +161,7 @@ The Stage 2 solution can still handle this. `query` and `selectedFilters` can re
 
 This is an important non-step: source-of-truth pressure and feedback-loop pressure do not automatically justify a ViewModel, a store, or MVI. The next pressure appears when state changes stop being only immediate local callback results.
 
-## Stage 4: Remote search justifies lightweight UDF
+## Stage 3: Remote search justifies lightweight UDF
 
 Now search becomes remote.
 
@@ -192,7 +192,7 @@ The key point is that async work alone does not automatically justify MVI. A sin
 
 If the implementation has one state stream, private mutation, explicit event handlers, and a well-contained cancellation strategy, adding an actor and reducer may not remove enough complexity to justify the extra structure.
 
-## Stage 5: Pagination introduces ordering rules
+## Stage 4: Pagination introduces ordering rules
 
 Pagination changes the problem more than it first appears.
 
@@ -216,7 +216,7 @@ Search and paging coordination rules also appear:
 - a page result belongs only to the query and page state that started it;
 - an old page result must not append into a newer search result.
 
-This is the first stage where one new UI element creates a real coordination problem. The screen now has at least two async operations that update the same fields:
+This is the stage where one new UI element creates a real coordination problem. The screen now has at least two async operations that update the same fields:
 
 - search replaces `items`, resets `page`, changes `canLoadMore`, and updates loading/error state;
 - pagination appends to `items`, increments `page`, changes `canLoadMore`, and updates loading/error state.
@@ -227,7 +227,7 @@ If the rule “new search invalidates paging” appears in `onQueryChanged`, `lo
 
 The problem is no longer only “how do I update state?” It becomes “who decides which async result is still valid?”
 
-## Stage 6: Repair attempts before MVI
+## Stage 5: Repair attempts before MVI
 
 Before introducing MVI, it is worth trying to improve the simpler design.
 
@@ -240,7 +240,7 @@ Several repair attempts are possible:
 | Two Flow pipelines | Models search latest-wins clearly | Paging still coordinates with current state |
 | State machine | Centralizes events and transitions | This is already close to actor/reducer |
 
-The companion `examples/07-mvvm-with-guards` folder keeps simplified versions of these repair attempts together: jobs, tokens, two Flow pipelines, and a small state machine.
+The companion `examples/06-mvvm-with-guards` folder keeps simplified versions of these repair attempts together: jobs, tokens, two Flow pipelines, and a small state machine.
 
 These approaches are not wrong. For some screens, one of them is the right trade-off. The useful signal is whether each new requirement adds another guard, token, flag, or special case in a different part of the class.
 
@@ -248,7 +248,7 @@ When local fixes keep spreading the same ordering rule across the implementation
 
 For example, a direct ViewModel might guard page success with “does this generation still match?” and “does this query still match?” checks in the page callback. An actor/reducer version moves that decision to the actor boundary: stale page results are not emitted as commit-worthy results, and valid results go through the single reducer path.
 
-## Stage 7: Actor/reducer MVI
+## Stage 6: Actor/reducer MVI
 
 This is where actor/reducer MVI becomes useful.
 
@@ -348,12 +348,11 @@ than build setup.
 |---|---|
 | [`examples/01-state-in-view`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/01-state-in-view) | Local Compose state and simple filtering |
 | [`examples/02-derived-state-source-of-truth`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/02-derived-state-source-of-truth) | Filters, `All` chip, empty state, and `Clear filters` |
-| [`examples/03-feedback-loop-compose-category-scroll`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/03-feedback-loop-compose-category-scroll) | Category chips synchronized with `LazyColumn` scroll |
+| [`examples/03-feedback-loop-compose-category-scroll`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/03-feedback-loop-compose-category-scroll) | Side note: category navigation synchronized with `LazyColumn` scroll |
 | [`examples/04-feedback-loop-android-views-select-all`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/04-feedback-loop-android-views-select-all) | Classic Android Views/listener-binding `Select all` checkbox loop |
-| [`examples/05-single-ui-state-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/05-single-ui-state-udf) | Lightweight UDF boundary reference |
-| [`examples/06-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/06-async-search-udf) | Remote search, loading/error, retry, and latest-wins |
-| [`examples/07-mvvm-with-guards`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/07-mvvm-with-guards) | Search plus pagination with jobs, tokens, flow pipelines, state machine, and guards |
-| [`examples/08-mvi-actor-reducer`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/08-mvi-actor-reducer) | Actor owns ordering and reducer commits state |
+| [`examples/05-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/05-async-search-udf) | First UDF example: remote search, loading/error, retry, and latest-wins |
+| [`examples/06-mvvm-with-guards`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/06-mvvm-with-guards) | Search plus pagination with jobs, tokens, flow pipelines, state machine, and guards |
+| [`examples/07-mvi-actor-reducer`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/07-mvi-actor-reducer) | Actor owns ordering and reducer commits state |
 
 The repository is not meant to be a framework. It is a set of small experiments that make trade-offs visible.
 
