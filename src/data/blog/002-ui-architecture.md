@@ -100,6 +100,8 @@ The lesson is that `Clear filters` visibility is not independent state. It is a 
 
 A feedback loop appears when two stateful parts of the UI drive each other.
 
+This looks similar to the previous stage because both problems involve source-of-truth confusion. The difference is that Stage 2 only had derived values. Here, one derived-looking value can also trigger side effects, so the problem becomes a feedback loop rather than simple derived-state consistency.
+
 A realistic Compose example is a catalog with category navigation:
 
 - category chips are shown at the top;
