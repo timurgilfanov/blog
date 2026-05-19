@@ -145,13 +145,11 @@ The same problem existed even more naturally in classic Android Views, listener 
 
 Compose changes the mechanics, but not the architectural lesson: if two UI states drive each other, one part of the system must own the coordination.
 
-## Stage 4: UDF establishes transition ownership
+## Before moving to UDF: local transitions are still enough
 
-This stage does not add new user-facing behavior. The catalog still has search, filters, an `All` chip, empty state, and `Clear filters`.
+This point does not add new user-facing behavior. The catalog still has search, filters, an `All` chip, empty state, and `Clear filters`.
 
-The new requirement is maintainability: the transition rules should have one owner. The screen is now large enough that keeping those rules inside UI callbacks makes the View responsible for behavior, not only rendering.
-
-The rules are small, but they are real:
+The transition rules are small and synchronous:
 
 - typing in the search field changes `query`;
 - tapping a filter chip adds or removes that filter;
@@ -159,40 +157,11 @@ The rules are small, but they are real:
 - tapping `Clear filters` resets both `query` and `selectedFilters`;
 - visible values stay derived from the current source state.
 
-The source-of-truth rule can still be applied locally. For a small screen, direct callbacks are valid. UDF becomes useful when those transition rules should be centralized, tested, or protected from spreading across child composables.
+The Stage 2 solution can still handle this. `query` and `selectedFilters` can remain local source state, visible values can remain derived, and callbacks can update the source state directly. Introducing UDF here would mostly add ceremony unless the project already has a convention that every screen follows it.
 
-The question is no longer only “Which values are derived?” It becomes “Who owns state transitions?”
+This is an important non-step: source-of-truth pressure and feedback-loop pressure do not automatically justify a ViewModel, a store, or MVI. The next pressure appears when state changes stop being only immediate local callback results.
 
-In lightweight UDF:
-
-- the View renders state;
-- the View reports user events;
-- the ViewModel or coordinator owns state transitions;
-- mutable state is private;
-- the UI observes read-only state.
-
-For the catalog screen, the View can report events like:
-
-- `QueryChanged`;
-- `FilterToggled`;
-- `AllFiltersClicked`;
-- `ClearFiltersClicked`.
-
-The ViewModel decides how those events change source state. The View no longer owns rules such as “toggling a filter adds or removes it,” “All clears selected filters,” or “Clear filters resets both query and filters.” Those rules move behind an explicit event boundary.
-
-The category-scroll feedback loop is handled separately in the companion example. UDF does not choose the scroll authority by itself; the one-authority rule from Stage 3 still applies. What UDF does is prevent the View from becoming the place where unrelated transition rules quietly accumulate.
-
-This is useful before full MVI. Direct event-handler methods are often enough. A ViewModel that exposes one read-only `StateFlow<UiState>` and accepts explicit events already creates a clear transition owner.
-
-The important shift is this:
-
-- state goes down;
-- events go up;
-- transitions happen in one place.
-
-UDF reduces hidden state machines by making the View a renderer and event sender instead of the owner of state transitions.
-
-## Stage 5: One async pipeline
+## Stage 4: Remote search justifies lightweight UDF
 
 Now search becomes remote.
 
@@ -203,7 +172,19 @@ The requirement changes from local filtering to asynchronous loading:
 - the UI shows results or an error;
 - if the user types quickly, the newest query wins.
 
-This adds time to the problem. State updates can now come from delayed repository responses, not only from immediate user events.
+This adds time to the problem. State updates can now come from delayed repository responses, not only from immediate user events. A query change no longer only updates a string; it may also cancel previous work, start new work, clear an old error, show loading, and later decide whether a result is still allowed to update the UI.
+
+This is where lightweight UDF starts to relieve pressure. The View renders state and reports events, while the ViewModel or coordinator owns state transitions and async work. Mutable state stays private, and the UI observes read-only state.
+
+For the catalog screen, the View can report events like:
+
+- `QueryChanged`;
+- `FilterToggled`;
+- `AllFiltersClicked`;
+- `ClearFiltersClicked`;
+- `RetryClicked`.
+
+The ViewModel decides how those events change source state and when they start asynchronous work. Direct event-handler methods are often enough. A ViewModel that exposes one read-only `StateFlow<UiState>` and accepts explicit events already creates a clear transition owner without full MVI.
 
 For one async pipeline, lightweight UDF is still usually enough. A ViewModel can debounce query changes, use `flatMapLatest` or cancel the previous job, set loading state, and update the same `UiState` when the latest result arrives.
 
@@ -211,7 +192,7 @@ The key point is that async work alone does not automatically justify MVI. A sin
 
 If the implementation has one state stream, private mutation, explicit event handlers, and a well-contained cancellation strategy, adding an actor and reducer may not remove enough complexity to justify the extra structure.
 
-## Stage 6: Pagination introduces ordering rules
+## Stage 5: Pagination introduces ordering rules
 
 Pagination changes the problem more than it first appears.
 
@@ -246,7 +227,7 @@ If the rule “new search invalidates paging” appears in `onQueryChanged`, `lo
 
 The problem is no longer only “how do I update state?” It becomes “who decides which async result is still valid?”
 
-## Stage 7: Repair attempts before MVI
+## Stage 6: Repair attempts before MVI
 
 Before introducing MVI, it is worth trying to improve the simpler design.
 
@@ -267,7 +248,7 @@ When local fixes keep spreading the same ordering rule across the implementation
 
 For example, a direct ViewModel might guard page success with “does this generation still match?” and “does this query still match?” checks in the page callback. An actor/reducer version moves that decision to the actor boundary: stale page results are not emitted as commit-worthy results, and valid results go through the single reducer path.
 
-## Stage 8: Actor/reducer MVI
+## Stage 7: Actor/reducer MVI
 
 This is where actor/reducer MVI becomes useful.
 
@@ -342,9 +323,9 @@ The stages above are not strict rules. They are signals.
 | Independent visual state | Local Compose state |
 | State must survive beyond composition | `rememberSaveable`, ViewModel, or persistence depending on lifetime |
 | Values are derived from the same source | Single source of truth and derived state |
-| View directly mutates state with dependents | UDF boundary |
-| Two UI elements synchronize each other both ways | One interaction authority or UDF coordinator |
-| One cancellable async pipeline | UDF with coroutine or Flow cancellation |
+| Synchronous local transition rules | Local callbacks can still be enough |
+| Two UI elements synchronize each other both ways | One interaction authority |
+| One cancellable async pipeline with delayed results | Lightweight UDF with coroutine or Flow cancellation |
 | Multiple async operations update the same fields | Stronger coordination |
 | Business ordering rules appear | State machine or actor/reducer |
 | Guards and tokens are scattered across handlers | Actor/reducer MVI becomes justified |
@@ -369,8 +350,8 @@ than build setup.
 | [`examples/02-derived-state-source-of-truth`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/02-derived-state-source-of-truth) | Filters, `All` chip, empty state, and `Clear filters` |
 | [`examples/03-feedback-loop-compose-category-scroll`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/03-feedback-loop-compose-category-scroll) | Category chips synchronized with `LazyColumn` scroll |
 | [`examples/04-feedback-loop-android-views-select-all`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/04-feedback-loop-android-views-select-all) | Classic Android Views/listener-binding `Select all` checkbox loop |
-| [`examples/05-single-ui-state-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/05-single-ui-state-udf) | One immutable UI state and explicit UI events |
-| [`examples/06-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/06-async-search-udf) | Remote search, loading/error, and latest-wins |
+| [`examples/05-single-ui-state-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/05-single-ui-state-udf) | Lightweight UDF boundary reference |
+| [`examples/06-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/06-async-search-udf) | Remote search, loading/error, retry, and latest-wins |
 | [`examples/07-mvvm-with-guards`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/07-mvvm-with-guards) | Search plus pagination with jobs, tokens, flow pipelines, state machine, and guards |
 | [`examples/08-mvi-actor-reducer`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/08-mvi-actor-reducer) | Actor owns ordering and reducer commits state |
 
@@ -380,7 +361,7 @@ The repository is not meant to be a framework. It is a set of small experiments 
 
 The evolution from local state to MVI is not a story about replacing a bad pattern with a good one.
 
-Local state was correct when the state was local. A single source of truth became useful when several UI elements depended on the same values. UDF became useful when the View needed to stop being a state writer. Actor/reducer MVI became useful only after overlapping async operations introduced ordering rules that were too expensive to keep distributed.
+Local state was correct when the state was local. A single source of truth became useful when several UI elements depended on the same values. Lightweight UDF became useful when remote search introduced delayed results, loading, errors, retry, and latest-wins cancellation. Actor/reducer MVI became useful only after overlapping async operations introduced ordering rules that were too expensive to keep distributed.
 
 That is the main lesson: for screen state management, UI architecture should be strongly shaped by coordination requirements.
 
