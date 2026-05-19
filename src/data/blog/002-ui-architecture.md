@@ -114,13 +114,22 @@ There are two directions:
 - chip selection changes list scroll position;
 - list scroll position changes chip selection.
 
-If both sides are modeled as independent mutable state and synchronized with effects, the behavior becomes hard to reason about. A chip click starts an animated scroll. During the animation, the list passes through intermediate sections. A scroll observer may update the selected chip to those intermediate sections. If selected chip state is also used as the trigger for programmatic scrolling, those intermediate selected-chip updates can start additional scroll commands. Then guards start appearing: `isProgrammaticScroll`, `ignoreScrollUpdates`, `pendingCategory`, or “only update after scroll settles.”
+If both sides are modeled as independent mutable state and synchronized with effects, the behavior becomes hard to reason about. A chip click starts an animated scroll. During the animation, the list passes through intermediate sections. A scroll observer may update the selected chip to those intermediate sections. If selected chip state is also used as the trigger for programmatic scrolling, those intermediate selected-chip updates can start additional scroll commands.
 
 This is a real feedback loop:
 
 - state A changes state B;
 - state B changes state A;
 - both directions can be triggered by user actions or programmatic updates.
+
+A local fix usually starts with guard state: `isProgrammaticScroll`, `ignoreScrollUpdates`, `pendingCategory`, a cancellable scroll job, or “only update after scroll settles.” The companion repository includes a guarded intermediate version for this reason. It can reduce visible glitches, but now the screen owns extra coordination rules:
+
+- what happens if the user drags during an animated scroll;
+- whether a canceled scroll should keep the tapped chip selected;
+- when the pending category is considered reached;
+- which scroll observations are allowed to update chip state.
+
+Guards are not automatically wrong. For small localized cases, they can be a practical solution. The pressure becomes visible when guard state becomes the main way the interaction is coordinated.
 
 Compose avoids many classic Android View feedback loops because recomposition does not call `onValueChange` by itself. A `TextField` with `value` and `onValueChange` is not automatically a feedback loop. But Compose can still create feedback loops when two stateful UI elements are synchronized in both directions.
 
@@ -129,6 +138,8 @@ The architectural response is to choose one authority for the interaction. For e
 - treat scroll position as the source of truth and derive the selected chip from the visible section;
 - treat chip clicks as commands to scroll rather than as a second permanent source of truth;
 - keep programmatic-scroll coordination in one place if product behavior requires it.
+
+This relieves the pressure by removing the second permanent selected-chip source. If product behavior requires the tapped chip to remain selected until scrolling finishes, that rule can still exist, but it should live in one coordinator rather than spread across several effects and callbacks.
 
 The same problem existed even more naturally in classic Android Views, listener binding, and two-way Data Binding-style synchronization. Consider a `Select all` checkbox and several individual filter checkboxes. The user unchecks one individual filter, the ViewModel emits `allSelected == false`, binding sets `selectAll.isChecked = false`, and that programmatic update triggers the `Select all` listener. The ViewModel may then clear every filter, not only the one the user changed. Real projects often added guards by detaching listeners, ignoring programmatic updates, or comparing old and new values.
 
