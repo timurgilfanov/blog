@@ -178,17 +178,9 @@ The companion repository includes a baseline version that uses a direct ViewMode
 
 A smaller improvement is to expose one immutable `SearchUiState` from the ViewModel instead of several separate values. That gives the UI one consistent snapshot to render. But stale-result handling still needs a clear owner: something must decide whether a completed search still belongs to the latest query.
 
-This is where Unidirectional Data Flow starts to relieve that pressure. The View renders read-only state and sends user events to the ViewModel; the ViewModel owns state mutations and search work. This event boundary has a cost: the UI no longer changes fields directly, and simple callbacks become named events or handler methods. That cost is mostly ceremony for local synchronous transitions, but it starts paying off when one event means “update the query, clear old errors, cancel previous work, show loading, and ignore stale results.”
+This is where Unidirectional Data Flow starts to relieve that pressure. The View renders read-only state and reports user actions through named ViewModel methods such as `onQueryChanged()` and `retry()`. The ViewModel owns state mutations and search work.
 
-For the catalog screen, the View can report events like:
-
-- `QueryChanged`;
-- `FilterToggled`;
-- `AllFiltersClicked`;
-- `ClearFiltersClicked`;
-- `RetryClicked`.
-
-The ViewModel decides how those events change source state and when they start asynchronous work. Direct event-handler methods are often enough. A ViewModel that exposes one read-only `StateFlow<UiState>` and accepts explicit events creates a clear transition owner for this stage.
+That boundary has a cost: the UI no longer changes fields directly, and simple callbacks become ViewModel entry points. That cost is mostly ceremony for local synchronous transitions, but it starts paying off when one user action means “update the query, clear old errors, cancel previous work, show loading, and ignore stale results.”
 
 For one async pipeline, UDF is usually enough. A ViewModel can debounce query changes, use `flatMapLatest` or cancel the previous job, set loading state, and update the same `UiState` when the latest result arrives.
 
