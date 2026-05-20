@@ -161,7 +161,7 @@ The Stage 2 solution can still handle this. `query` and `selectedFilters` can re
 
 This is an important non-step: source-of-truth pressure and feedback-loop pressure do not automatically justify a ViewModel, a store, or MVI. The next pressure appears when state changes stop being only immediate local callback results.
 
-## Stage 3: Remote search justifies lightweight UDF
+## Stage 3: Remote search justifies UDF
 
 Now search becomes remote.
 
@@ -172,9 +172,9 @@ The requirement changes from local filtering to asynchronous loading:
 - the UI shows results or an error;
 - if the user types quickly, the newest query wins.
 
-This adds time to the problem. State updates can now come from delayed repository responses, not only from immediate user events. A query change no longer only updates a string; it may also cancel previous work, start new work, clear an old error, show loading, and later decide whether a result is still allowed to update the UI.
+This adds time to the problem. State updates can now come from delayed repository responses, not only from immediate user events. A query change no longer only updates a string; it may also cancel previous work, start new work, clear an old error, show loading, and ignore stale results from older queries.
 
-This is where lightweight UDF starts to relieve pressure. The View renders state and reports events, while the ViewModel or coordinator owns state transitions and async work. Mutable state stays private, and the UI observes read-only state.
+This is where Unidirectional Data Flow starts to relieve pressure. The View renders read-only state, sends user events to the ViewModel, and the ViewModel owns state mutations and search work. Mutable state stays private, and the UI observes state instead of changing it directly.
 
 For the catalog screen, the View can report events like:
 
@@ -184,13 +184,11 @@ For the catalog screen, the View can report events like:
 - `ClearFiltersClicked`;
 - `RetryClicked`.
 
-The ViewModel decides how those events change source state and when they start asynchronous work. Direct event-handler methods are often enough. A ViewModel that exposes one read-only `StateFlow<UiState>` and accepts explicit events already creates a clear transition owner without full MVI.
+The ViewModel decides how those events change source state and when they start asynchronous work. Direct event-handler methods are often enough. A ViewModel that exposes one read-only `StateFlow<UiState>` and accepts explicit events creates a clear transition owner for this stage.
 
-For one async pipeline, lightweight UDF is still usually enough. A ViewModel can debounce query changes, use `flatMapLatest` or cancel the previous job, set loading state, and update the same `UiState` when the latest result arrives.
+For one async pipeline, UDF is usually enough. A ViewModel can debounce query changes, use `flatMapLatest` or cancel the previous job, set loading state, and update the same `UiState` when the latest result arrives.
 
-The key point is that async work alone does not automatically justify MVI. A single latest-wins pipeline has a clear owner and a clear ordering rule. The rule is local: only the latest search result may commit state.
-
-If the implementation has one state stream, private mutation, explicit event handlers, and a well-contained cancellation strategy, adding an actor and reducer may not remove enough complexity to justify the extra structure.
+The key point is that a single latest-wins pipeline has a clear owner and a clear ordering rule. The rule is local: only the latest search result may commit state.
 
 ## Stage 4: Pagination introduces ordering rules
 
@@ -325,7 +323,7 @@ The stages above are not strict rules. They are signals.
 | Values are derived from the same source | Single source of truth and derived state |
 | Synchronous local transition rules | Local callbacks can still be enough |
 | Two UI elements synchronize each other both ways | One interaction authority |
-| One cancellable async pipeline with delayed results | Lightweight UDF with coroutine or Flow cancellation |
+| One cancellable async pipeline with delayed results | UDF with coroutine or Flow cancellation |
 | Multiple async operations update the same fields | Stronger coordination |
 | Business ordering rules appear | State machine or actor/reducer |
 | Guards and tokens are scattered across handlers | Actor/reducer MVI becomes justified |
@@ -360,7 +358,7 @@ The repository is not meant to be a framework. It is a set of small experiments 
 
 The evolution from local state to MVI is not a story about replacing a bad pattern with a good one.
 
-Local state was correct when the state was local. A single source of truth became useful when several UI elements depended on the same values. Lightweight UDF became useful when remote search introduced delayed results, loading, errors, retry, and latest-wins cancellation. Actor/reducer MVI became useful only after overlapping async operations introduced ordering rules that were too expensive to keep distributed.
+Local state was correct when the state was local. A single source of truth became useful when several UI elements depended on the same values. UDF became useful when remote search introduced delayed results, loading, errors, retry, and latest-wins cancellation. Actor/reducer MVI became useful only after overlapping async operations introduced ordering rules that were too expensive to keep distributed.
 
 That is the main lesson: for screen state management, UI architecture should be strongly shaped by coordination requirements.
 
