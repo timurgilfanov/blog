@@ -25,7 +25,7 @@ The main example is intentionally common: a searchable catalog screen.
 
 I start with a simple list and add requirements one by one: local search, filters, empty state, remote loading, pagination, and retry. The point is not the screen itself, but how each requirement changes the relationship between UI elements, state, and asynchronous work.
 
-You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. For example, `examples/01-state-in-view` matches the first stage, `examples/03-async-search-udf` matches the async-search stage, and `examples/05-mvi-actor-reducer` matches the final actor/reducer example.
+You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. For example, `examples/01-state-in-view` matches the first stage, `examples/03-async-search-udf` matches the async-search stage, and `examples/04-pagination-coordination` contains the guarded MVVM and actor/reducer responses to pagination coordination.
 
 I also include a side note about feedback loops. It uses a smaller category-navigation example because filter visibility itself does not create a bidirectional interaction. These feedback-loop examples live under `examples/side-notes/`; the repository also includes a classic Android Views/listener-binding version of the same problem.
 
@@ -184,7 +184,7 @@ But single state does not enforce “newest query wins” by itself. A direct Vi
 
 The Stage 3 takeaway is limited but important: remote search justifies moving async state management into a ViewModel, and a single-state UDF shape gives the screen a stable render contract. For one async latest-wins pipeline, Flow can keep the ordering rule local. The next pressure appears when pagination adds a second async operation that updates the same state as search.
 
-## Stage 4: Pagination introduces ordering rules
+## Stage 4: Pagination creates coordination pressure
 
 The new requirement sounds small:
 
@@ -192,7 +192,7 @@ The new requirement sounds small:
 
 But once remote search already exists, pagination brings ordering rules with it.
 
-New rules appears immediately:
+New rules appear immediately:
 
 - load the first page for a new search;
 - load more only while the current search still has another page to request (`canLoadMore`);
@@ -206,15 +206,13 @@ This is the stage where one new UI element creates a real coordination problem. 
 - search replaces `items`, resets `page`, changes `canLoadMore`, and updates loading/error state;
 - pagination appends to `items`, increments `page`, changes `canLoadMore`, and updates loading/error state.
 
-A direct ViewModel can still handle this. It can cancel jobs, compare queries, keep tokens, or guard state commits. The question is where those checks live.
-
-If the rule “new search invalidates paging” appears in `onQueryChanged`, `loadMore`, search success, search failure, page success, and page failure, the implementation becomes harder to change safely. The same business rule is distributed across multiple callbacks and time-dependent paths.
-
 The problem is no longer only “how do I update state?” It becomes “who decides which async result is still valid?”
 
-## Stage 5: Repair attempts before MVI
+At this point the requirement pressure is fixed. The architecture still has choices.
 
-Before introducing MVI, it is worth trying to improve the simpler design.
+### First response: guarded MVVM
+
+A direct ViewModel can still handle this. It can cancel jobs, compare queries, keep tokens, or guard state commits. The question is where those checks live.
 
 Several repair attempts are possible:
 
@@ -225,25 +223,27 @@ Several repair attempts are possible:
 | Two Flow pipelines | Models search latest-wins clearly | Paging still coordinates with current state |
 | State machine | Centralizes events and transitions | This is already close to actor/reducer |
 
-The companion `examples/04-mvvm-with-guards` folder keeps simplified versions of these repair attempts together: jobs, tokens, two Flow pipelines, and a small state machine.
+The companion `examples/04-pagination-coordination/01-mvvm-with-guards` folder keeps simplified versions of these repair attempts together: jobs, tokens, two Flow pipelines, and a small state machine.
 
 These approaches are not wrong. For some screens, one of them is the right trade-off. The useful signal is whether each new requirement adds another guard, token, flag, or special case in a different part of the class.
 
+If the rule “new search invalidates paging” appears in `onQueryChanged`, `loadMore`, search success, search failure, page success, and page failure, the implementation becomes harder to change safely. The same business rule is distributed across multiple callbacks and time-dependent paths.
+
 When local fixes keep spreading the same ordering rule across the implementation, the architecture is telling us something: the screen needs a clearer coordination authority.
 
-For example, a direct ViewModel might guard page success with “does this generation still match?” and “does this query still match?” checks in the page callback. An actor/reducer version moves that decision to the actor boundary: stale page results are not emitted as commit-worthy results, and valid results go through the single reducer path.
+### Stronger response: actor/reducer MVI
 
-## Stage 6: Actor/reducer MVI
+Actor/reducer MVI is a stronger response to the same pagination requirements.
 
-This is where actor/reducer MVI becomes useful.
-
-Not because MVI is more advanced, but because the screen now has a specific kind of complexity:
+Not because MVI is more advanced, and not because a new feature appeared after guarded MVVM, but because the screen now has a specific kind of complexity:
 
 - overlapping async operations;
 - shared state fields;
 - business ordering rules;
 - stale results that must not commit state;
 - side effects that should belong to user actions, not incidental state restoration.
+
+The companion `examples/04-pagination-coordination/02-mvi-actor-reducer` folder shows this response.
 
 In an actor/reducer design:
 
@@ -274,6 +274,8 @@ The reducer owns state transitions like:
 - page started;
 - page succeeded;
 - page failed.
+
+For example, a direct ViewModel might guard page success with “does this generation still match?” and “does this query still match?” checks in the page callback. An actor/reducer version moves that decision to the actor boundary: stale page results are not emitted as commit-worthy results, and valid results go through the single reducer path.
 
 That separation makes the ordering rules visible in one place instead of implicit across multiple event handlers and callbacks.
 
@@ -325,9 +327,7 @@ Architecture is a trade-off. The question is whether the structure removes more 
 
 The companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) is intended as additional material for this post. It follows the same sequence of pressures:
 
-The repository also includes a minimal runnable Android sample app for visual demos. The async search, MVVM guard,
-and actor/reducer ordering examples have deterministic JVM tests, so this post can stay focused on architecture rather
-than build setup.
+The repository also includes a minimal runnable Android sample app for visual demos. The async search and pagination-coordination examples have deterministic JVM tests, so this post can stay focused on architecture rather than build setup.
 
 Main progression:
 
@@ -336,8 +336,7 @@ Main progression:
 | [`examples/01-state-in-view`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/01-state-in-view) | Local Compose state and simple filtering |
 | [`examples/02-derived-state-source-of-truth`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/02-derived-state-source-of-truth) | Filters, `All` chip, empty state, and `Clear filters` |
 | [`examples/03-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/03-async-search-udf) | Remote search with baseline, single-state UDF, and Flow latest-wins variants |
-| [`examples/04-mvvm-with-guards`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/04-mvvm-with-guards) | Search plus pagination with jobs, tokens, flow pipelines, state machine, and guards |
-| [`examples/05-mvi-actor-reducer`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/05-mvi-actor-reducer) | Actor owns ordering and reducer commits state |
+| [`examples/04-pagination-coordination`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/04-pagination-coordination) | Search plus pagination coordination with guarded MVVM and actor/reducer MVI responses |
 
 Side notes:
 
@@ -352,7 +351,7 @@ The repository is not meant to be a framework. It is a set of small experiments 
 
 The evolution from local state to MVI is not a story about replacing a bad pattern with a good one.
 
-Local state was correct when the state was local. A single source of truth became useful when several UI elements depended on the same values. Single-state UDF became useful when remote search introduced delayed results, loading, errors, and latest-wins cancellation. A Flow pipeline reduced the manual guards needed for the latest-wins rule. Actor/reducer MVI became useful only after overlapping async operations introduced ordering rules that were too expensive to keep distributed.
+Local state was correct when the state was local. A single source of truth became useful when several UI elements depended on the same values. Single-state UDF became useful when remote search introduced delayed results, loading, errors, and latest-wins cancellation. A Flow pipeline reduced the manual guards needed for the latest-wins rule. Pagination created coordination pressure, and actor/reducer MVI became useful as a stronger response when those ordering rules were too expensive to keep distributed.
 
 That is the main lesson: for screen state management, UI architecture should be strongly shaped by coordination requirements.
 
