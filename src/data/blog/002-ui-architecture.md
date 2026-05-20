@@ -186,29 +186,22 @@ The Stage 3 takeaway is limited but important: remote search justifies moving as
 
 ## Stage 4: Pagination introduces ordering rules
 
-Pagination changes the problem more than it first appears.
-
 The new requirement sounds small:
 
 - add `Load more`.
 
 But once remote search already exists, pagination brings ordering rules with it.
 
-Local paging rules appear immediately:
+New rules appears immediately:
 
-- do not start page 2 twice;
-- do not start a new page request while another page request is running;
-- do not load more when `canLoadMore` is false;
-- append page results in order.
-
-Search and paging coordination rules also appear:
-
+- load the first page for a new search;
+- load more only while the current search still has another page to request (`canLoadMore`);
+- do not start a second page request while one is already in flight;
 - a new search clears previous paged results;
 - a new search invalidates in-flight page requests;
-- a page result belongs only to the query and page state that started it;
-- an old page result must not append into a newer search result.
+- a page result may be applied only if its query and page state still match the current search.
 
-This is the stage where one new UI element creates a real coordination problem. The screen now has at least two async operations that update the same fields:
+This is the stage where one new UI element creates a real coordination problem. The screen now has two async operations that update the same fields:
 
 - search replaces `items`, resets `page`, changes `canLoadMore`, and updates loading/error state;
 - pagination appends to `items`, increments `page`, changes `canLoadMore`, and updates loading/error state.
