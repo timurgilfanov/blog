@@ -174,17 +174,19 @@ The requirement changes from local filtering to asynchronous loading:
 
 This adds time to the problem. State updates can now come from delayed repository responses, not only from immediate user events. A query change no longer only updates a string; it may also cancel previous work, start new work, clear an old error, show loading, and ignore stale results from older queries.
 
-The companion repository includes a baseline version that uses a direct ViewModel with several state holders and guards: current query, loading flag, error, items, current job, and checks that prevent older results from replacing newer ones. It can meet the requirements, but the behavior is now held together by several related mutations and conditions.
+The companion repository includes a baseline version that uses a ViewModel with several state holders and guards for async request handling: current query, loading flag, error, items, current job, and checks that prevent older results from replacing newer ones. It can meet the requirements, but the behavior is now held together by several related mutations and conditions. Also, separate mutations may cause a temporary inconsistensy in UI (_is this a real issue for the example?_) and, if some mutation fogotten, even a correctness issue.
 
-A smaller improvement is to expose one immutable `SearchUiState` from the ViewModel instead of several separate values. That gives the UI one consistent snapshot to render. But stale-result handling still needs a clear owner: something must decide whether a completed search still belongs to the latest query.
+A smaller improvement is to expose one immutable `SearchUiState` from the ViewModel instead of several separate values. That gives the UI one consistent snapshot to render. In this practical sense, it is already UDF (_introduced without explanation what it is_): state flows down, user actions go back to the ViewModel, and mutation stays private.
 
-This is where Unidirectional Data Flow starts to relieve that pressure. The View renders read-only state and reports user actions through named ViewModel methods such as `onQueryChanged()` and `retry()`. The ViewModel owns state mutations and search work.
+(_not connected to previous text_)But stale-result handling still needs a clear owner. Something must decide whether a completed search still belongs to the latest query. A direct single-state ViewModel can do that with jobs, generations, and checks before each state commit, but those guards are still part of the implementation.
 
-That boundary has a cost: the UI no longer changes fields directly, and simple callbacks become ViewModel entry points. That cost is mostly ceremony for local synchronous transitions, but it starts paying off when one user action means “update the query, clear old errors, cancel previous work, show loading, and ignore stale results.”
+We can use coroutine Flow operators to express the latest-wins rule directly. A ViewModel can debounce query changes, use `flatMapLatest`, set loading state, and update the same `SearchUiState` when the latest result arrives.
 
-For one async pipeline, UDF is usually enough. A ViewModel can debounce query changes, use `flatMapLatest` or cancel the previous job, set loading state, and update the same `UiState` when the latest result arrives.
+(_why we explain this after we introduce ViewModel in baseline example?_)The ViewModel boundary has a cost: the UI no longer changes fields directly, and simple callbacks become ViewModel entry points such as `onQueryChanged()` and `retry()`. That cost is mostly ceremony for local synchronous transitions, but it starts paying off when one user action means “update the query, clear old errors, cancel previous work, show loading, and ignore stale results.”
 
-The key point is that a single latest-wins pipeline has a clear owner and a clear ordering rule. The rule is local: only the latest search result may commit state.
+(_do we need this?_)The key point is that a single latest-wins pipeline has a clear owner and a clear ordering rule. The rule is local: only the latest search result may commit state.
+
+(_do we need a conclusion for the stage 3?_)
 
 ## Stage 4: Pagination introduces ordering rules
 
@@ -319,7 +321,7 @@ The stages above are not strict rules. They are signals.
 | Values are derived from the same source | Single source of truth and derived state |
 | Synchronous local transition rules | Local callbacks can still be enough |
 | Two UI elements synchronize each other both ways | One interaction authority |
-| One cancellable async pipeline with delayed results | UDF with coroutine or Flow cancellation |
+| One cancellable async pipeline with delayed results | Single-state UDF plus coroutine or Flow cancellation |
 | Multiple async operations update the same fields | Stronger coordination |
 | Business ordering rules appear | State machine or actor/reducer |
 | Guards and tokens are scattered across handlers | Actor/reducer MVI becomes justified |
@@ -344,7 +346,7 @@ than build setup.
 | [`examples/02-derived-state-source-of-truth`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/02-derived-state-source-of-truth) | Filters, `All` chip, empty state, and `Clear filters` |
 | [`examples/03-feedback-loop-compose-category-scroll`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/03-feedback-loop-compose-category-scroll) | Side note: category navigation synchronized with `LazyColumn` scroll |
 | [`examples/04-feedback-loop-android-views-select-all`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/04-feedback-loop-android-views-select-all) | Classic Android Views/listener-binding `Select all` checkbox loop |
-| [`examples/05-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/05-async-search-udf) | First UDF example: remote search, loading/error, retry, and latest-wins |
+| [`examples/05-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/05-async-search-udf) | Remote search with baseline, single-state UDF, and Flow latest-wins variants |
 | [`examples/06-mvvm-with-guards`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/06-mvvm-with-guards) | Search plus pagination with jobs, tokens, flow pipelines, state machine, and guards |
 | [`examples/07-mvi-actor-reducer`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/07-mvi-actor-reducer) | Actor owns ordering and reducer commits state |
 
@@ -354,7 +356,7 @@ The repository is not meant to be a framework. It is a set of small experiments 
 
 The evolution from local state to MVI is not a story about replacing a bad pattern with a good one.
 
-Local state was correct when the state was local. A single source of truth became useful when several UI elements depended on the same values. UDF became useful when remote search introduced delayed results, loading, errors, retry, and latest-wins cancellation. Actor/reducer MVI became useful only after overlapping async operations introduced ordering rules that were too expensive to keep distributed.
+Local state was correct when the state was local. A single source of truth became useful when several UI elements depended on the same values. Single-state UDF became useful when remote search introduced delayed results, loading, errors, retry, and latest-wins cancellation. A Flow pipeline reduced the manual guards needed for the latest-wins rule. Actor/reducer MVI became useful only after overlapping async operations introduced ordering rules that were too expensive to keep distributed.
 
 That is the main lesson: for screen state management, UI architecture should be strongly shaped by coordination requirements.
 
