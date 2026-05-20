@@ -25,9 +25,9 @@ The main example is intentionally common: a searchable catalog screen.
 
 I start with a simple list and add requirements one by one: local search, filters, empty state, remote loading, pagination, and retry. The point is not the screen itself, but how each requirement changes the relationship between UI elements, state, and asynchronous work.
 
-You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same sequence. If you want to inspect code while reading, open the numbered `examples/` folders. For example, `examples/01-state-in-view` matches the first stage, `examples/05-async-search-udf` matches the async-search stage, and `examples/07-mvi-actor-reducer` matches the final actor/reducer example.
+You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. For example, `examples/01-state-in-view` matches the first stage, `examples/03-async-search-udf` matches the async-search stage, and `examples/05-mvi-actor-reducer` matches the final actor/reducer example.
 
-I also include a side note about feedback loops. It uses a smaller category-navigation example because filter visibility itself does not create a bidirectional interaction. The repository also includes a classic Android Views/listener-binding version of the same feedback-loop problem.
+I also include a side note about feedback loops. It uses a smaller category-navigation example because filter visibility itself does not create a bidirectional interaction. These feedback-loop examples live under `examples/side-notes/`; the repository also includes a classic Android Views/listener-binding version of the same problem.
 
 The runnable `sample-app` is optional. It exists so you can interact with the examples visually. The tests are focused on the async ordering examples, where behavior is harder to verify by inspection alone.
 
@@ -232,7 +232,7 @@ Several repair attempts are possible:
 | Two Flow pipelines | Models search latest-wins clearly | Paging still coordinates with current state |
 | State machine | Centralizes events and transitions | This is already close to actor/reducer |
 
-The companion `examples/06-mvvm-with-guards` folder keeps simplified versions of these repair attempts together: jobs, tokens, two Flow pipelines, and a small state machine.
+The companion `examples/04-mvvm-with-guards` folder keeps simplified versions of these repair attempts together: jobs, tokens, two Flow pipelines, and a small state machine.
 
 These approaches are not wrong. For some screens, one of them is the right trade-off. The useful signal is whether each new requirement adds another guard, token, flag, or special case in a different part of the class.
 
@@ -336,15 +336,22 @@ The repository also includes a minimal runnable Android sample app for visual de
 and actor/reducer ordering examples have deterministic JVM tests, so this post can stay focused on architecture rather
 than build setup.
 
+Main progression:
+
 | Example | Purpose |
 |---|---|
 | [`examples/01-state-in-view`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/01-state-in-view) | Local Compose state and simple filtering |
 | [`examples/02-derived-state-source-of-truth`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/02-derived-state-source-of-truth) | Filters, `All` chip, empty state, and `Clear filters` |
-| [`examples/03-feedback-loop-compose-category-scroll`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/03-feedback-loop-compose-category-scroll) | Side note: category navigation synchronized with `LazyColumn` scroll |
-| [`examples/04-feedback-loop-android-views-select-all`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/04-feedback-loop-android-views-select-all) | Classic Android Views/listener-binding `Select all` checkbox loop |
-| [`examples/05-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/05-async-search-udf) | Remote search with baseline, single-state UDF, and Flow latest-wins variants |
-| [`examples/06-mvvm-with-guards`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/06-mvvm-with-guards) | Search plus pagination with jobs, tokens, flow pipelines, state machine, and guards |
-| [`examples/07-mvi-actor-reducer`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/07-mvi-actor-reducer) | Actor owns ordering and reducer commits state |
+| [`examples/03-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/03-async-search-udf) | Remote search with baseline, single-state UDF, and Flow latest-wins variants |
+| [`examples/04-mvvm-with-guards`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/04-mvvm-with-guards) | Search plus pagination with jobs, tokens, flow pipelines, state machine, and guards |
+| [`examples/05-mvi-actor-reducer`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/05-mvi-actor-reducer) | Actor owns ordering and reducer commits state |
+
+Side notes:
+
+| Example | Purpose |
+|---|---|
+| [`examples/side-notes/feedback-loop-compose-category-scroll`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/side-notes/feedback-loop-compose-category-scroll) | Category navigation synchronized with `LazyColumn` scroll |
+| [`examples/side-notes/feedback-loop-android-views-select-all`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/side-notes/feedback-loop-android-views-select-all) | Classic Android Views/listener-binding `Select all` checkbox loop |
 
 The repository is not meant to be a framework. It is a set of small experiments that make trade-offs visible.
 
