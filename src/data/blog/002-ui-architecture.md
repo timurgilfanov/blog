@@ -174,7 +174,11 @@ The requirement changes from local filtering to asynchronous loading:
 
 This adds time to the problem. State updates can now come from delayed repository responses, not only from immediate user events. A query change no longer only updates a string; it may also cancel previous work, start new work, clear an old error, show loading, and ignore stale results from older queries.
 
-This is where Unidirectional Data Flow starts to relieve pressure. The View renders read-only state, sends user events to the ViewModel, and the ViewModel owns state mutations and search work. Mutable state stays private, and the UI observes state instead of changing it directly.
+The companion repository includes a baseline version that uses a direct ViewModel with several state holders and guards: current query, loading flag, error, items, current job, and checks that prevent older results from replacing newer ones. It can meet the requirements, but the behavior is now held together by several related mutations and conditions.
+
+A smaller improvement is to expose one immutable `SearchUiState` from the ViewModel instead of several separate values. That gives the UI one consistent snapshot to render. But stale-result handling still needs a clear owner: something must decide whether a completed search still belongs to the latest query.
+
+This is where Unidirectional Data Flow starts to relieve that pressure. The View renders read-only state and sends user events to the ViewModel; the ViewModel owns state mutations and search work. This event boundary has a cost: the UI no longer changes fields directly, and simple callbacks become named events or handler methods. That cost is mostly ceremony for local synchronous transitions, but it starts paying off when one event means “update the query, clear old errors, cancel previous work, show loading, and ignore stale results.”
 
 For the catalog screen, the View can report events like:
 
