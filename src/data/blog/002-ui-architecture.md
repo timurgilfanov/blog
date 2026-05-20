@@ -159,7 +159,7 @@ The transition rules are small and synchronous:
 
 The Stage 2 solution can still handle this. `query` and `selectedFilters` can remain local source state, visible values can remain derived, and callbacks can update the source state directly. Introducing UDF here would mostly add ceremony unless the project already has a convention that every screen follows it.
 
-This is an important non-step: source-of-truth pressure and feedback-loop pressure do not automatically justify a ViewModel, a store, or MVI. The next pressure appears when state changes stop being only immediate local callback results.
+This is an important non-step: source-of-truth pressure and feedback-loop pressure do not automatically require moving the whole screen behind a ViewModel boundary. Local source state, derived values, and one clear interaction authority can still be enough. The next pressure appears when state changes stop being only immediate local callback results.
 
 ## Stage 3: Remote search justifies UDF
 
@@ -174,19 +174,17 @@ The requirement changes from local filtering to asynchronous loading:
 
 This adds time to the problem. State updates can now come from delayed repository responses, not only from immediate user events. A query change no longer only updates a string; it may also cancel previous work, start new work, clear an old error, show loading, and ignore stale results from older queries.
 
-The companion repository includes a baseline version that uses a ViewModel with several state holders and guards for async request handling: current query, loading flag, error, items, current job, and checks that prevent older results from replacing newer ones. It can meet the requirements, but the behavior is now held together by several related mutations and conditions. Also, separate mutations may cause a temporary inconsistensy in UI (_is this a real issue for the example?_) and, if some mutation fogotten, even a correctness issue.
+This is the first point where a ViewModel boundary starts paying for itself. The UI no longer changes fields directly, and simple callbacks become ViewModel entry points such as `onQueryChanged()` and `retry()`. That cost is mostly ceremony for local synchronous transitions, but it becomes useful when one user action means “update the query, clear old errors, cancel previous work, show loading, and ignore stale results.”
 
-A smaller improvement is to expose one immutable `SearchUiState` from the ViewModel instead of several separate values. That gives the UI one consistent snapshot to render. In this practical sense, it is already UDF (_introduced without explanation what it is_): state flows down, user actions go back to the ViewModel, and mutation stays private.
+UDF here means unidirectional data flow: state flows down to the UI, user actions flow back up to the ViewModel, and mutation stays private. The companion repository includes a baseline version that follows that broad shape with several state holders and guards for async request handling: current query, loading flag, error, items, current job, and checks that prevent older results from replacing newer ones. It can meet the requirements, but the behavior is held together by several related mutations and conditions. Because those values are emitted independently, the UI has no single atomic snapshot; a missed mutation can also turn a temporary mismatch into a correctness bug.
 
-(_not connected to previous text_)But stale-result handling still needs a clear owner. Something must decide whether a completed search still belongs to the latest query. A direct single-state ViewModel can do that with jobs, generations, and checks before each state commit, but those guards are still part of the implementation.
+A smaller improvement is to expose one immutable `SearchUiState` from the ViewModel instead of several separate values. That gives the UI one consistent snapshot to render.
+
+However, one UI state only solves the rendering snapshot problem. It does not decide which delayed repository result is still allowed to become the next snapshot. A direct single-state ViewModel can do that with jobs, generations, and checks before each state commit, but those guards are still part of the implementation.
 
 We can use coroutine Flow operators to express the latest-wins rule directly. A ViewModel can debounce query changes, use `flatMapLatest`, set loading state, and update the same `SearchUiState` when the latest result arrives.
 
-(_why we explain this after we introduce ViewModel in baseline example?_)The ViewModel boundary has a cost: the UI no longer changes fields directly, and simple callbacks become ViewModel entry points such as `onQueryChanged()` and `retry()`. That cost is mostly ceremony for local synchronous transitions, but it starts paying off when one user action means “update the query, clear old errors, cancel previous work, show loading, and ignore stale results.”
-
-(_do we need this?_)The key point is that a single latest-wins pipeline has a clear owner and a clear ordering rule. The rule is local: only the latest search result may commit state.
-
-(_do we need a conclusion for the stage 3?_)
+The Stage 3 takeaway is limited but important: remote search justifies a ViewModel-owned UDF boundary, and one immutable UI state gives the screen a stable render contract. For one async latest-wins pipeline, Flow can keep the ordering rule local. The next pressure appears when pagination adds a second async operation that updates the same state as search.
 
 ## Stage 4: Pagination introduces ordering rules
 
