@@ -9,7 +9,7 @@ draft: false
 
 A failed interview made me realize that my understanding of Android UI architecture was too pattern-oriented.
 
-I could talk about MVVM, UDF, and MVI as implementation styles, but I was less precise about the requirements that make each style useful. Saying “use MVI for complex screens” was not enough, because “complex” can mean many different things.
+I could talk about ViewModel-based screens, UDF, and MVI as implementation styles, but I was less precise about the requirements that make each style useful. Saying “use MVI for complex screens” was not enough, because “complex” can mean many different things.
 
 The question I needed to answer was not “Which pattern is better?” but “Which coordination problem does this screen actually have?”
 
@@ -237,16 +237,14 @@ In an actor/reducer design:
 
 If ordering rules are the reason for MVI, then those rules must live inside the actor/reducer boundary. In this style of actor/reducer MVI, the actor owns allowed work and request validity. If any handler can still commit state directly, the rule can be bypassed. If every async callback can update state independently, the reducer is only ceremony.
 
-For the search screen, the actor can own questions like:
+For this search screen, the actor owns decisions about:
 
-- should this query start a new search;
-- should this page request be allowed;
-- should an in-flight page request be cancelled or ignored;
-- does this page result still belong to the current query;
-- should retry repeat search or paging;
-- should this action produce analytics.
+- whether a query should start a new search;
+- whether a page request is allowed;
+- whether an in-flight page request should be cancelled or ignored;
+- whether a page result still belongs to the current query.
 
-The reducer owns state transitions like:
+The reducer owns state transitions:
 
 - search started;
 - search succeeded;
@@ -296,6 +294,7 @@ The stages above are not strict rules. They are signals.
 | Multiple async operations update the same fields | Stronger coordination |
 | Business ordering rules appear | State machine or actor/reducer |
 | Guards and generation checks are scattered across handlers | Actor/reducer MVI becomes justified |
+| One transition function mixes allowed work, async calls, result validation, and state commits | Actor/reducer split |
 
 The point is not to choose the most structured pattern by default. The point is to notice when the current structure no longer absorbs the screen’s complexity.
 
@@ -335,4 +334,4 @@ Local state was correct when the state was local. A single source of truth becam
 
 That is the main lesson: for screen state management, UI architecture should be strongly shaped by coordination requirements.
 
-When there is no coordination problem, simple code is usually better. When coordination rules exist, they should be explicit. And when the same rule appears in several handlers, callbacks, and guards, the screen needs a single authority for that rule.
+When there is no coordination problem, simple code is usually better. When coordination rules exist, they should be explicit. If those rules are scattered across handlers, or if the one coordination point also starts async work, validates results, and commits state, the screen needs clearer ownership.
