@@ -23,7 +23,7 @@ The longer project context is in the UI architecture section of my previous refl
 
 The main example is intentionally common: a searchable catalog screen.
 
-I start with a simple list and add requirements one by one: local search, filters, empty state, remote loading, pagination, and retry. The point is not the screen itself, but how each requirement changes the relationship between UI elements, state, and asynchronous work.
+I start with a simple list and add requirements one by one: local search, filters, empty state, remote loading, and pagination. The point is not the screen itself, but how each requirement changes the relationship between UI elements, state, and asynchronous work.
 
 You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. For example, `examples/01-state-in-view` matches the first stage, `examples/03-async-search-udf` matches the async-search stage, and `examples/04-pagination-coordination` contains the guarded UDF ViewModel and actor/reducer responses to pagination coordination.
 
@@ -246,28 +246,6 @@ For this search screen, the actor decides:
 The reducer handles state transitions: search started/succeeded/failed and page started/succeeded/failed.
 
 That separation makes time-dependent coordination explicit without letting async callbacks commit state directly.
-
-## Follow-up requirements: retry and analytics
-
-Retry and analytics are not needed to prove the MVI point. Search plus pagination already creates enough coordination pressure.
-
-But they are useful follow-up requirements because they expose related ownership questions.
-
-Retry asks:
-
-- did the initial search fail;
-- did a page request fail;
-- what exactly should be repeated;
-- is it safe to infer that from the current page number, or should failed request identity be modeled explicitly?
-
-Analytics asks:
-
-- which user action should produce an event;
-- should retry count as a new search or as retry;
-- how do we avoid sending analytics again after rotation or state restoration;
-- where should one-off side effects live?
-
-These requirements strengthen the same lesson. Once the screen has meaningful user actions, async requests, and ordering rules, event identity and request identity matter. They should be modeled intentionally instead of inferred from incidental state.
 
 ## Decision guide
 
