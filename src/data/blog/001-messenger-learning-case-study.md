@@ -6,6 +6,12 @@ pubDatetime: 2026-05-11T21:29:00Z
 modDatetime: 2026-05-16T12:04:14Z
 featured: true
 draft: false
+tags:
+  - Android Architecture
+  - Case Study
+  - Engineering Process
+  - Testing
+  - AI-Assisted Development
 ---
 My reflection on maintainable Android architecture started around 2021, after repeatedly experiencing how my own spaghetti code led to expensive debugging, difficult onboarding, and growing long-term maintenance costs in real projects.
 

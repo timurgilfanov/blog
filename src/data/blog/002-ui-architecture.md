@@ -5,6 +5,12 @@ slug: android-ui-architecture-driven-by-requirements
 pubDatetime: 2026-05-17T00:00:00Z
 featured: false
 draft: false
+tags:
+  - Android Architecture
+  - UI Architecture
+  - Jetpack Compose
+  - State Management
+  - MVI
 ---
 
 A failed interview made me realize that my understanding of Android UI architecture was too pattern-oriented.
