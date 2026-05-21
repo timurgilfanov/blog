@@ -25,7 +25,7 @@ The main example is intentionally common: a searchable catalog screen.
 
 I start with a simple list and add requirements one by one: local search, filters, empty state, remote loading, and pagination. The point is not the screen itself, but how each requirement changes the relationship between UI elements, state, and asynchronous work.
 
-You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. The repository README contains the folder-by-folder map, runnable sample app instructions, and test commands. One simplification is intentional: the companion code for Stage 3 and Stage 4 keeps the catalog shape but drops filters to isolate async search and pagination coordination. 
+You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. The repository README contains the folder-by-folder map, runnable sample app instructions, and test commands. One simplification is intentional: the companion code for Stage 3 and Stage 4 keeps the catalog shape but drops filters to isolate async search and pagination coordination.
 
 I also include a side note about feedback loops. It uses a smaller category-navigation example because filter visibility itself does not create a bidirectional interaction. These feedback-loop examples live under `examples/side-notes/`; the repository also includes a classic Android Views/listener-binding version of the same problem.
 
@@ -176,11 +176,11 @@ This adds time to the problem. State updates can now come from delayed repositor
 
 This is the first point where a ViewModel boundary starts paying for itself. The state management is no longer just a couple of local assignments; one user action may mean “update the query, clear old errors, cancel previous work, show loading, and ignore stale results.” Moving that work into a ViewModel gives it a stable owner outside composition. It also matters for lifecycle: during configuration changes, the ViewModel and its coroutine work can survive while the UI is recreated, so an in-flight search does not have to restart just because the screen rotated. The cost is that the UI no longer changes fields directly, and simple callbacks become ViewModel entry points such as `onQueryChanged()`.
 
-The companion repository includes a baseline version that moves async state management into a ViewModel but still exposes several separate state streams: current query, loading flag, error, and items. It also keeps coordination fields for the current job and checks that prevent older results from replacing newer ones. It can meet the requirements, but the behavior is held together by several related mutations and conditions. Because the visible values are emitted independently, the UI has no single atomic snapshot to render and can observe temporary inconsistent combinations; a missed mutation can also turn a temporary mismatch into a correctness bug.
+The companion repository includes a baseline version that moves async state management into a ViewModel but still exposes several separate state streams: current query, loading flag, search-completed flag, error, and items. It also keeps coordination fields for the current job and checks that prevent older results from replacing newer ones. It can meet the requirements, but the behavior is held together by several related mutations and conditions. Because the visible values are emitted independently, the UI has no single atomic snapshot to render and can observe temporary inconsistent combinations; a missed mutation can also turn a temporary mismatch into a correctness bug.
 
 To give the UI a single atomic snapshot, we make the screen state single and immutable: one `SearchUiState` instead of several independent streams. At that point the design becomes unidirectional data flow (UDF): state flows down as a renderable snapshot, user actions flow back up through ViewModel entry points, and mutation stays private.
 
-But single state does not enforce “newest query wins” by itself. A direct ViewModel still needs jobs, generations, and checks before state commits to prevent stale results. The companion repository’s Flow pipeline version expresses that latest-wins rule with coroutine Flow operators: debounce query changes, use `flatMapLatest`, and update the same `SearchUiState` when the latest result arrives.
+But single state does not enforce “newest query wins” by itself. A direct ViewModel still needs jobs, generations, and checks before state commits to prevent stale results. The companion repository’s Flow pipeline version expresses that latest-wins rule with a coroutine Flow pipeline: delay before starting a request, use `flatMapLatest` to cancel stale work, and update the same `SearchUiState` when the latest result arrives.
 
 The Stage 3 takeaway is limited but important: remote search justifies moving async state management into a ViewModel, and a single-state UDF shape gives the screen a stable render contract. For one async latest-wins pipeline, Flow can keep the ordering rule local. The next pressure appears when pagination adds a second async operation that updates the same state as search.
 
@@ -212,13 +212,13 @@ The problem is no longer only “how do I update state?” It becomes “who dec
 
 This keeps the Stage 3 UDF shape: state flows down from a ViewModel, and user actions flow back through methods such as `onQueryChanged` and `loadMore`. “Guarded” means those methods still launch requests and update `StateFlow`, but add checks so stale results do not update the UI.
 
-The companion `examples/04-pagination-coordination/01-guarded-udf-viewmodel` folder compares three guarded UDF ViewModel versions:
+The companion `examples/04-pagination-coordination/01-guarded-udf-viewmodel` folder first compares three direct guarded UDF ViewModel versions:
 
 - **Generation checks** attach a simple version number to async work. When a result returns, the ViewModel applies it only if the generation still matches the current search. This handles stale search and page results without cancelling old work.
 - **Jobs and cancellation** keep explicit jobs for search and paging. A new search cancels obsolete work where possible, but the example still uses generation checks because cancellation alone is not a complete ordering rule.
-- **Two Flow pipelines** move search and paging into separate flows. Search can use latest-wins operators, but paging still has to coordinate with the current query, page, and `canLoadMore`.
+- **Two Flow pipelines** move search and paging into separate flows. Search can use latest-wins operators, but paging still has to coordinate with the current request identity, query, page, and `canLoadMore`.
 
-These versions satisfy the search-and-pagination requirements, but the rule “new search invalidates paging” is still preserved through guards around handlers and async completions. That makes behavior harder to debug, update, and explain because the rule is reconstructed from checks in different paths.
+These versions satisfy the search-and-pagination requirements, but the rule “new search invalidates paging” is still preserved through guards around handlers and async completions. The companion tests cover stale page invalidation, same-query refreshes, and non-overlapping page requests for the guarded variants. That makes behavior harder to debug, update, and explain because the rule is reconstructed from checks in different paths.
 
 ### Centralized response: state-machine UDF ViewModel
 
@@ -251,16 +251,16 @@ That separation makes time-dependent coordination explicit without letting async
 
 Additional requirements put pressure on existing architectural boundaries. The rows below are not stages in a maturity ladder. They are signals that state ownership, interaction authority, async coordination, or transition ownership may need a clearer boundary so the UI remains easier to update, debug, and explain.
 
-| Requirement pressure | Boundary under pressure | Architecture response that may be enough |
-|---|---|---|
-| Independent visual state | No new boundary needed | Local Compose state |
-| State must survive beyond composition | State lifetime boundary | `rememberSaveable`, ViewModel, or persistence depending on lifetime |
-| Values are derived from the same source | Source-of-truth boundary | Single source of truth and derived state |
-| Synchronous local transition rules | Transition ownership boundary | Local callbacks can still be enough |
-| Two UI elements synchronize each other both ways | Interaction authority boundary | One owner for the shared interaction |
-| One cancellable async pipeline with delayed results | Async ownership boundary | Single-state UDF plus coroutine or Flow cancellation |
-| Multiple async operations update the same fields | State commit coordination boundary | Stronger coordination around state commits |
-| Business ordering rules appear | Ordering boundary | State machine or actor/reducer |
+| Requirement pressure                                | Boundary under pressure            | Architecture response that may be enough                            |
+| --------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------- |
+| Independent visual state                            | No new boundary needed             | Local Compose state                                                 |
+| State must survive beyond composition               | State lifetime boundary            | `rememberSaveable`, ViewModel, or persistence depending on lifetime |
+| Values are derived from the same source             | Source-of-truth boundary           | Single source of truth and derived state                            |
+| Synchronous local transition rules                  | Transition ownership boundary      | Local callbacks can still be enough                                 |
+| Two UI elements synchronize each other both ways    | Interaction authority boundary     | One owner for the shared interaction                                |
+| One cancellable async pipeline with delayed results | Async ownership boundary           | Single-state UDF plus coroutine or Flow cancellation                |
+| Multiple async operations update the same fields    | State commit coordination boundary | Stronger coordination around state commits                          |
+| Business ordering rules appear                      | Ordering boundary                  | State machine or actor/reducer                                      |
 
 Implementation symptoms matter too. If guards, generation checks, or stale-result checks are scattered across handlers, the current async boundary is probably too weak. Stronger coordination, such as actor/reducer MVI, may become justified.
 
