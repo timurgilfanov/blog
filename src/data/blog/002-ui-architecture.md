@@ -212,16 +212,17 @@ The problem is no longer only “how do I update state?” It becomes “who dec
 
 This keeps the Stage 3 UDF shape: state flows down from a ViewModel, and user actions flow back through methods such as `onQueryChanged` and `loadMore`. “Guarded” means those methods still launch requests and update `StateFlow`, but add checks so stale results do not update the UI.
 
-The companion `examples/04-pagination-coordination/01-guarded-udf-viewmodel` folder compares four guarded UDF ViewModel versions:
+The companion `examples/04-pagination-coordination/01-guarded-udf-viewmodel` folder compares three guarded UDF ViewModel versions:
 
 - **Generation checks** attach a simple version number to async work. When a result returns, the ViewModel applies it only if the generation still matches the current search. This handles stale search and page results without cancelling old work.
 - **Jobs and cancellation** keep explicit jobs for search and paging. A new search cancels obsolete work where possible, but the example still uses generation checks because cancellation alone is not a complete ordering rule.
 - **Two Flow pipelines** move search and paging into separate flows. Search can use latest-wins operators, but paging still has to coordinate with the current query, page, and `canLoadMore`.
-- **State machine** models events and transitions explicitly. Valid transitions become easier to see because intents and async completions pass through one transition function.
 
-All four versions satisfy the search-and-pagination requirements, but they show different pressures. In the generation, jobs, and two-pipeline versions, the rule “new search invalidates paging” is still preserved through guards around handlers and async completions. That makes behavior harder to debug, update, and explain because the rule is reconstructed from checks in different paths.
+These versions satisfy the search-and-pagination requirements, but the rule “new search invalidates paging” is still preserved through guards around handlers and async completions. That makes behavior harder to debug, update, and explain because the rule is reconstructed from checks in different paths.
 
-The state-machine version improves ownership by routing events and completions through one function. The rule is less scattered, but the single coordination point now does too much: it decides allowed work, starts async requests, validates async completions, and commits UI state.
+### Centralized response: state-machine UDF ViewModel
+
+The state-machine version in the same companion folder improves ownership by centralizing View actions and async completions in one transition function. The invalidation rule is less scattered, but the single coordination point now does too much: it decides allowed work, starts async requests, validates async completions, and commits UI state.
 
 ### Stronger response: actor/reducer MVI
 
