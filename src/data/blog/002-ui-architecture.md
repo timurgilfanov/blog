@@ -243,14 +243,7 @@ For this search screen, the actor decides:
 - whether an in-flight page request should be cancelled or ignored;
 - whether a page result still belongs to the current query.
 
-The reducer handles state transitions:
-
-- search started;
-- search succeeded;
-- search failed;
-- page started;
-- page succeeded;
-- page failed.
+The reducer handles state transitions: search started/succeeded/failed and page started/succeeded/failed.
 
 That separation makes time-dependent coordination explicit without letting async callbacks commit state directly.
 
