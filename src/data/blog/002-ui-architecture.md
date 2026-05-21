@@ -217,13 +217,9 @@ The companion `examples/04-pagination-coordination/01-guarded-udf-viewmodel` fol
 - **Generation checks** attach a simple version number to async work. When a result returns, the ViewModel applies it only if the generation still matches the current search. This handles stale search and page results without cancelling old work.
 - **Jobs and cancellation** keep explicit jobs for search and paging. A new search cancels obsolete work where possible, but the example still uses generation checks because cancellation alone is not a complete ordering rule.
 - **Two Flow pipelines** move search and paging into separate flows. Search can use latest-wins operators, but paging still has to coordinate with the current query, page, and `canLoadMore`.
-- **State machine** models events and transitions explicitly. Valid transitions become easier to see, but once events and async results go through one transition point, the design is already close to actor/reducer coordination.
+- **State machine** models events and transitions explicitly. Valid transitions become easier to see, but once events and async results go through one transition point, the design is already moving toward a single coordination authority.
 
-These approaches are not wrong. For some screens, one of them is the right trade-off. The useful signal is whether each new requirement adds another guard, generation check, flag, or special case in a different part of the class.
-
-If the rule “new search invalidates paging” appears in `onQueryChanged`, `loadMore`, search success, search failure, page success, and page failure, the implementation becomes harder to change safely. The same business rule is distributed across multiple callbacks and time-dependent paths.
-
-When local fixes keep spreading the same ordering rule across the implementation, the architecture is telling us something: the screen needs a clearer coordination authority.
+All four versions satisfy the search-and-pagination requirements. The weakness is ownership: the rule “new search invalidates paging” has to be preserved across `onQueryChanged`, `loadMore`, and the search/page success and failure paths. That makes the behavior harder to debug, update, and explain because the rule is reconstructed from scattered checks instead of owned in one place.
 
 ### Stronger response: actor/reducer MVI
 
