@@ -25,7 +25,7 @@ The main example is intentionally common: a searchable catalog screen.
 
 I start with a simple list and add requirements one by one: local search, filters, empty state, remote loading, and pagination. The point is not the screen itself, but how each requirement changes the relationship between UI elements, state, and asynchronous work.
 
-You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. For example, `examples/01-state-in-view` matches the first stage, `examples/03-async-search-udf` matches the async-search stage, and `examples/04-pagination-coordination` contains the guarded UDF ViewModel and actor/reducer responses to pagination coordination.
+You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. The repository README contains the folder-by-folder map, runnable sample app instructions, and test commands.
 
 I also include a side note about feedback loops. It uses a smaller category-navigation example because filter visibility itself does not create a bidirectional interaction. These feedback-loop examples live under `examples/side-notes/`; the repository also includes a classic Android Views/listener-binding version of the same problem.
 
@@ -251,8 +251,6 @@ That separation makes time-dependent coordination explicit without letting async
 
 Additional requirements put pressure on existing architectural boundaries. The rows below are not stages in a maturity ladder. They are signals that state ownership, interaction authority, async coordination, or transition ownership may need a clearer boundary so the UI remains easier to update, debug, and explain.
 
-### Requirement pressure
-
 | Requirement pressure | Boundary under pressure | Architecture response that may be enough |
 |---|---|---|
 | Independent visual state | No new boundary needed | Local Compose state |
@@ -268,6 +266,8 @@ Implementation symptoms matter too. If guards, generation checks, or stale-resul
 
 If one transition function starts allowed work, launches async calls, validates results, and commits state, the boundary has moved too far in the other direction. Splitting coordination from state transitions can make the code easier to update, debug, and explain.
 
+## Shared baseline, explicit escalation
+
 Consistency still matters in a shared codebase, but consistency does not have to come from the heaviest pattern. In the [Messenger project reflection](/posts/one-year-rebuilding-android-architecture/#ui-architecture-complexity-should-match-real-problems), the external MVI dependency gave screens a common shape, which helped reduce variation across screens. The lesson was that this shared shape should be a baseline contract first, and heavier coordination should be introduced only when the screen has a named coordination problem.
 
 A practical compromise is a light default screen contract:
@@ -279,30 +279,6 @@ A practical compromise is a light default screen contract:
 - ordering and coordination rules have documented escalation paths.
 
 Actor/reducer MVI then becomes an escalation path for screens with real ordering or coordination pressure, not the default shape of every screen. Architecture is a trade-off: the question is whether the structure removes more complexity than it adds.
-
-## Companion repository
-
-The companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) is intended as additional material for this post. It follows the same sequence of pressures:
-
-The repository also includes a minimal runnable Android sample app for visual demos. The async search and pagination-coordination examples have deterministic JVM tests, so this post can stay focused on architecture rather than build setup.
-
-Main progression:
-
-| Example | Purpose |
-|---|---|
-| [`examples/01-state-in-view`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/01-state-in-view) | Local Compose state and simple filtering |
-| [`examples/02-derived-state-source-of-truth`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/02-derived-state-source-of-truth) | Filters, `All` chip, empty state, and `Clear filters` |
-| [`examples/03-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/03-async-search-udf) | Remote search with baseline, single-state UDF, and Flow latest-wins variants |
-| [`examples/04-pagination-coordination`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/04-pagination-coordination) | Search plus pagination coordination with guarded UDF ViewModel and actor/reducer MVI responses |
-
-Side notes:
-
-| Example | Purpose |
-|---|---|
-| [`examples/side-notes/feedback-loop-compose-category-scroll`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/side-notes/feedback-loop-compose-category-scroll) | Category navigation synchronized with `LazyColumn` scroll |
-| [`examples/side-notes/feedback-loop-android-views-select-all`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/side-notes/feedback-loop-android-views-select-all) | Classic Android Views/listener-binding `Select all` checkbox loop |
-
-The repository is not meant to be a framework. It is a set of small experiments that make trade-offs visible.
 
 ## Conclusion
 
