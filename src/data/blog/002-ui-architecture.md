@@ -25,7 +25,7 @@ The main example is intentionally common: a searchable catalog screen.
 
 I start with a simple list and add requirements one by one: local search, filters, empty state, remote loading, pagination, and retry. The point is not the screen itself, but how each requirement changes the relationship between UI elements, state, and asynchronous work.
 
-You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. For example, `examples/01-state-in-view` matches the first stage, `examples/03-async-search-udf` matches the async-search stage, and `examples/04-pagination-coordination` contains the guarded MVVM and actor/reducer responses to pagination coordination.
+You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. For example, `examples/01-state-in-view` matches the first stage, `examples/03-async-search-udf` matches the async-search stage, and `examples/04-pagination-coordination` contains the guarded UDF ViewModel and actor/reducer responses to pagination coordination.
 
 I also include a side note about feedback loops. It uses a smaller category-navigation example because filter visibility itself does not create a bidirectional interaction. These feedback-loop examples live under `examples/side-notes/`; the repository also includes a classic Android Views/listener-binding version of the same problem.
 
@@ -208,24 +208,18 @@ This is the stage where one new UI element creates a real coordination problem. 
 
 The problem is no longer only “how do I update state?” It becomes “who decides which async result is still valid?”
 
-At this point the requirement pressure is fixed. The architecture still has choices.
+### First response: guarded UDF ViewModel
 
-### First response: guarded MVVM
+This keeps the Stage 3 UDF shape: state flows down from a ViewModel, and user actions flow back through methods such as `onQueryChanged` and `loadMore`. “Guarded” means those methods still launch requests and update `StateFlow`, but add checks so stale results do not update the UI.
 
-A direct ViewModel can still handle this. It can cancel jobs, compare queries, keep tokens, or guard state commits. The question is where those checks live.
+The companion `examples/04-pagination-coordination/01-guarded-udf-viewmodel` folder compares four guarded UDF ViewModel versions:
 
-Several repair attempts are possible:
+- **Generation checks** attach a simple version number to async work. When a result returns, the ViewModel applies it only if the generation still matches the current search. This handles stale search and page results without cancelling old work.
+- **Jobs and cancellation** keep explicit jobs for search and paging. A new search cancels obsolete work where possible, but the example still uses generation checks because cancellation alone is not a complete ordering rule.
+- **Two Flow pipelines** move search and paging into separate flows. Search can use latest-wins operators, but paging still has to coordinate with the current query, page, and `canLoadMore`.
+- **State machine** models events and transitions explicitly. Valid transitions become easier to see, but once events and async results go through one transition point, the design is already close to actor/reducer coordination.
 
-| Approach | What improves | Remaining pressure |
-|---|---|---|
-| Jobs and cancellation | Cancels obvious stale work | Rules can remain spread across handlers and callbacks |
-| Tokens | Makes stale-result checks explicit | Token checks appear in multiple places |
-| Two Flow pipelines | Models search latest-wins clearly | Paging still coordinates with current state |
-| State machine | Centralizes events and transitions | This is already close to actor/reducer |
-
-The companion `examples/04-pagination-coordination/01-mvvm-with-guards` folder keeps simplified versions of these repair attempts together: jobs, tokens, two Flow pipelines, and a small state machine.
-
-These approaches are not wrong. For some screens, one of them is the right trade-off. The useful signal is whether each new requirement adds another guard, token, flag, or special case in a different part of the class.
+These approaches are not wrong. For some screens, one of them is the right trade-off. The useful signal is whether each new requirement adds another guard, generation check, flag, or special case in a different part of the class.
 
 If the rule “new search invalidates paging” appears in `onQueryChanged`, `loadMore`, search success, search failure, page success, and page failure, the implementation becomes harder to change safely. The same business rule is distributed across multiple callbacks and time-dependent paths.
 
@@ -235,7 +229,7 @@ When local fixes keep spreading the same ordering rule across the implementation
 
 Actor/reducer MVI is a stronger response to the same pagination requirements.
 
-Not because MVI is more advanced, and not because a new feature appeared after guarded MVVM, but because the screen now has a specific kind of complexity:
+Not because MVI is more advanced, and not because a new feature appeared after the guarded UDF ViewModel response, but because the screen now has a specific kind of complexity:
 
 - overlapping async operations;
 - shared state fields;
@@ -315,7 +309,7 @@ The stages above are not strict rules. They are signals.
 | One cancellable async pipeline with delayed results | Single-state UDF plus coroutine or Flow cancellation |
 | Multiple async operations update the same fields | Stronger coordination |
 | Business ordering rules appear | State machine or actor/reducer |
-| Guards and tokens are scattered across handlers | Actor/reducer MVI becomes justified |
+| Guards and generation checks are scattered across handlers | Actor/reducer MVI becomes justified |
 
 The point is not to choose the most structured pattern by default. The point is to notice when the current structure no longer absorbs the screen’s complexity.
 
@@ -336,7 +330,7 @@ Main progression:
 | [`examples/01-state-in-view`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/01-state-in-view) | Local Compose state and simple filtering |
 | [`examples/02-derived-state-source-of-truth`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/02-derived-state-source-of-truth) | Filters, `All` chip, empty state, and `Clear filters` |
 | [`examples/03-async-search-udf`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/03-async-search-udf) | Remote search with baseline, single-state UDF, and Flow latest-wins variants |
-| [`examples/04-pagination-coordination`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/04-pagination-coordination) | Search plus pagination coordination with guarded MVVM and actor/reducer MVI responses |
+| [`examples/04-pagination-coordination`](https://github.com/timurgilfanov/ui-architecture-study/tree/main/examples/04-pagination-coordination) | Search plus pagination coordination with guarded UDF ViewModel and actor/reducer MVI responses |
 
 Side notes:
 
