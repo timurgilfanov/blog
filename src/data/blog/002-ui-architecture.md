@@ -282,7 +282,7 @@ Actor/reducer MVI then becomes an escalation path for screens with real ordering
 
 ## Conclusion
 
-The evolution from local state to MVI is not a story about replacing a weak pattern with a stronger one. It is a story about boundaries becoming explicit when requirements make implicit ownership too expensive. _inroducing boundaries, scattered ownership_
+The evolution from local state to MVI is not a story about replacing a weak pattern with a stronger one. It is a story about introducing or redrawing ownership boundaries when new requirements make the current structure hard to update, debug, or explain.
 
 Local state was correct while the behavior had one owner. A single source of truth became useful when several visible values depended on the same inputs. Single-state UDF became useful when remote search introduced delayed results, loading, errors, and latest-wins cancellation. A Flow pipeline reduced the manual guards needed for the latest-wins rule. Actor/reducer MVI became useful when pagination added ordering rules.
 
