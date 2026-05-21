@@ -268,11 +268,7 @@ Implementation symptoms matter too. If guards, generation checks, or stale-resul
 
 If one transition function starts allowed work, launches async calls, validates results, and commits state, the boundary has moved too far in the other direction. Splitting coordination from state transitions can make the code easier to update, debug, and explain.
 
-The point is not to choose the most structured pattern by default. The point is to notice when the current structure no longer absorbs the screen’s complexity.
-
-If a screen has no ordering problem, actor/reducer MVI may add boilerplate without much benefit. If a screen has several overlapping async operations and each handler contains its own guards, staying with direct handlers may make the behavior harder to change safely.
-
-Architecture is a trade-off. The question is whether the structure removes more complexity than it adds.
+The trap is choosing structure before naming the coordination problem it is meant to solve. I ran into that trap in the [Messenger project reflection](/posts/one-year-rebuilding-android-architecture/#ui-architecture-complexity-should-match-real-problems), where adopting MVI as a default structure helped with consistency but did not automatically solve the real ordering problems. If a screen has no ordering problem, actor/reducer MVI may add boilerplate without much benefit. Architecture is a trade-off: the question is whether the structure removes more complexity than it adds.
 
 ## Companion repository
 
