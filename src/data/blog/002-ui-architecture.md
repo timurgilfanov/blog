@@ -225,19 +225,17 @@ The state-machine version improves ownership by routing events and completions t
 
 ### Stronger response: actor/reducer MVI
 
-Actor/reducer MVI takes the state-machine idea one step further: keep a single coordination boundary, but split async coordination from state commits. The companion `examples/04-pagination-coordination/02-mvi-actor-reducer` folder shows this response.
+Actor/reducer MVI takes the state-machine idea one step further: keep one coordination boundary, but split ownership. The actor owns time-dependent coordination; the reducer owns state transitions.
 
-In an actor/reducer design:
+The companion `examples/04-pagination-coordination/02-mvi-actor-reducer` folder shows this response.
 
-- an intent represents something that happened from outside the state machine, such as `QueryChanged` or `LoadMore`;
-- the actor decides what async work is allowed and enforces ordering rules;
-- a result represents the outcome of work or an internal decision;
-- the reducer converts previous state plus result into next state;
-- the View renders state and sends intents.
+In this design:
 
-If ordering rules are the reason for MVI, then those rules must live inside the actor/reducer boundary. In this style of actor/reducer MVI, the actor owns allowed work and request validity. If any handler can still commit state directly, the rule can be bypassed. If every async callback can update state independently, the reducer is only ceremony.
+- the View sends intents, such as `QueryChanged` or `LoadMore`;
+- the actor owns time-dependent coordination: it decides what async work is allowed, validates whether async results are still current, and emits results;
+- the reducer owns state transitions: it converts previous state plus result into next state.
 
-For this search screen, the actor owns decisions about:
+For this search screen, time-dependent coordination means decisions about:
 
 - whether a query should start a new search;
 - whether a page request is allowed;
@@ -255,7 +253,7 @@ The reducer owns state transitions:
 
 For example, a UDF ViewModel might guard page success with “does this generation still match?” and “does this query still match?” checks in the page callback. An actor/reducer version moves that decision to the actor boundary: stale page results are not emitted as commit-worthy results, and valid results go through the single reducer path.
 
-That separation makes the ordering rules visible in one place instead of implicit across multiple event handlers and callbacks.
+That separation makes the ordering rules visible without letting async callbacks commit state directly.
 
 ## Follow-up requirements: retry and analytics
 
