@@ -284,7 +284,7 @@ Actor/reducer MVI then becomes an escalation path for screens with real ordering
 
 The evolution from local state to MVI is not a story about replacing a weak pattern with a stronger one. It is a story about boundaries becoming explicit when requirements make implicit ownership too expensive. _inroducing boundaries, scattered ownership_
 
-Local state was correct while the behavior had one owner. A single source of truth became useful when several visible values depended on the same inputs. Single-state UDF became useful when remote search introduced delayed results, loading, errors, and latest-wins cancellation. A Flow pipeline reduced the manual guards needed for the latest-wins rule. Pagination added ordering pressure, and actor/reducer MVI became useful only when those rules were too expensive to keep distributed (_sentence could be simplier_).
+Local state was correct while the behavior had one owner. A single source of truth became useful when several visible values depended on the same inputs. Single-state UDF became useful when remote search introduced delayed results, loading, errors, and latest-wins cancellation. A Flow pipeline reduced the manual guards needed for the latest-wins rule. Actor/reducer MVI became useful when pagination added ordering rules.
 
 For a shared codebase, the practical lesson is not to use the same heavy architecture everywhere. It is to use a consistent baseline and a clear escalation path. A light contract can make screens familiar across developers, while stronger boundaries should appear only when named coordination problems make the baseline hard to update, debug, or explain.
 
