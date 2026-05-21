@@ -282,10 +282,10 @@ Actor/reducer MVI then becomes an escalation path for screens with real ordering
 
 ## Conclusion
 
-The evolution from local state to MVI is not a story about replacing a bad pattern with a good one.
+The evolution from local state to MVI is not a story about replacing a weak pattern with a stronger one. It is a story about boundaries becoming explicit when requirements make implicit ownership too expensive. _inroducing boundaries, scattered ownership_
 
-Local state was correct when the state was local. A single source of truth became useful when several UI elements depended on the same values. Single-state UDF became useful when remote search introduced delayed results, loading, errors, and latest-wins cancellation. A Flow pipeline reduced the manual guards needed for the latest-wins rule. Pagination created coordination pressure, and actor/reducer MVI became useful as a stronger response when those ordering rules were too expensive to keep distributed.
+Local state was correct while the behavior had one owner. A single source of truth became useful when several visible values depended on the same inputs. Single-state UDF became useful when remote search introduced delayed results, loading, errors, and latest-wins cancellation. A Flow pipeline reduced the manual guards needed for the latest-wins rule. Pagination added ordering pressure, and actor/reducer MVI became useful only when those rules were too expensive to keep distributed (_sentence could be simplier_).
 
-That is the main lesson: for screen state management, UI architecture should be strongly shaped by coordination requirements.
+For a shared codebase, the practical lesson is not to use the same heavy architecture everywhere. It is to use a consistent baseline and a clear escalation path. A light contract can make screens familiar across developers, while stronger boundaries should appear only when named coordination problems make the baseline hard to update, debug, or explain.
 
-When there is no coordination problem, simple code is usually better. When coordination rules exist, they should be explicit. If those rules are scattered across handlers, or if the one coordination point also starts async work, validates results, and commits state, the screen needs clearer ownership.
+Architecture should remove more complexity than it adds. Simple screens should stay simple. Coordinated screens should make ownership explicit.
