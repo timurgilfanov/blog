@@ -35,7 +35,7 @@ You can read the post without opening the code, but the companion [`ui-architect
 
 I also include a side note about feedback loops. It uses a smaller category-navigation example because filter visibility itself does not create a bidirectional interaction. These feedback-loop examples live under `examples/side-notes/`; the repository also includes a classic Android Views/listener-binding version of the same problem.
 
-The runnable `sample-app` is optional. It exists so you can interact with the examples visually. The tests are focused on the async ordering examples, where behavior is harder to verify by inspection alone.
+The runnable `sample-app` is optional. It exists so you can interact with selected examples visually. The tests are focused on the async ordering examples, where behavior is harder to verify by inspection alone.
 
 ## Stage 1: Local state is enough
 
