@@ -216,7 +216,7 @@ The companion `examples/04-pagination-coordination/01-guarded-udf-viewmodel` fol
 
 - **Generation checks** attach a simple version number to async work. When a result returns, the ViewModel applies it only if the generation still matches the current search. This handles stale search and page results without cancelling old work.
 - **Jobs and cancellation** keep explicit jobs for search and paging. A new search cancels obsolete work where possible, but the example still uses generation checks because cancellation alone is not a complete ordering rule.
-- **Two Flow pipelines** move search and paging into separate flows. Search can use latest-wins operators, but paging still has to coordinate with the current request identity, query, page, and `canLoadMore`.
+- **Two Flow pipelines** move search and paging into separate flows. Search can use latest-wins operators, but paging still has to coordinate with the current query generation, query, page, and `canLoadMore`.
 
 These versions satisfy the search-and-pagination requirements, but the rule “new search invalidates paging” is still preserved through guards around handlers and async completions. The companion tests cover stale page invalidation, same-query refreshes, and non-overlapping page requests for the guarded variants. That makes behavior harder to debug, update, and explain because the rule is reconstructed from checks in different paths.
 
