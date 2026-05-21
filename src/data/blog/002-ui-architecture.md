@@ -232,17 +232,17 @@ The companion `examples/04-pagination-coordination/02-mvi-actor-reducer` folder 
 In this design:
 
 - the View sends intents, such as `QueryChanged` or `LoadMore`;
-- the actor owns time-dependent coordination: it decides what async work is allowed, validates whether async results are still current, and emits results;
-- the reducer owns state transitions: it converts previous state plus result into next state.
+- the actor decides what async work is allowed, rejects stale completions, and emits results;
+- the reducer converts previous state plus result into next state.
 
-For this search screen, time-dependent coordination means decisions about:
+For this search screen, the actor decides:
 
 - whether a query should start a new search;
 - whether a page request is allowed;
 - whether an in-flight page request should be cancelled or ignored;
 - whether a page result still belongs to the current query.
 
-The reducer owns state transitions:
+The reducer handles state transitions:
 
 - search started;
 - search succeeded;
@@ -251,9 +251,7 @@ The reducer owns state transitions:
 - page succeeded;
 - page failed.
 
-For example, a UDF ViewModel might guard page success with “does this generation still match?” and “does this query still match?” checks in the page callback. An actor/reducer version moves that decision to the actor boundary: stale page results are not emitted as commit-worthy results, and valid results go through the single reducer path.
-
-That separation makes the ordering rules visible without letting async callbacks commit state directly.
+That separation makes time-dependent coordination explicit without letting async callbacks commit state directly.
 
 ## Follow-up requirements: retry and analytics
 
