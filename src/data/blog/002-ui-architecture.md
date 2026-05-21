@@ -268,7 +268,17 @@ Implementation symptoms matter too. If guards, generation checks, or stale-resul
 
 If one transition function starts allowed work, launches async calls, validates results, and commits state, the boundary has moved too far in the other direction. Splitting coordination from state transitions can make the code easier to update, debug, and explain.
 
-The trap is choosing structure before naming the coordination problem it is meant to solve. I ran into that trap in the [Messenger project reflection](/posts/one-year-rebuilding-android-architecture/#ui-architecture-complexity-should-match-real-problems), where adopting MVI as a default structure helped with consistency but did not automatically solve the real ordering problems. If a screen has no ordering problem, actor/reducer MVI may add boilerplate without much benefit. Architecture is a trade-off: the question is whether the structure removes more complexity than it adds.
+Consistency still matters in a shared codebase, but consistency does not have to come from the heaviest pattern. In the [Messenger project reflection](/posts/one-year-rebuilding-android-architecture/#ui-architecture-complexity-should-match-real-problems), the external MVI dependency gave screens a common shape, which helped reduce variation across screens. The lesson was that this shared shape should be a baseline contract first, and heavier coordination should be introduced only when the screen has a named coordination problem.
+
+A practical compromise is a light default screen contract:
+
+- a ViewModel exposes read-only `StateFlow<UiState>`;
+- one-off events use a separate side-effect `Flow`;
+- the UI sends callbacks or events to the ViewModel;
+- state ownership rules are predictable;
+- ordering and coordination rules have documented escalation paths.
+
+Actor/reducer MVI then becomes an escalation path for screens with real ordering or coordination pressure, not the default shape of every screen. Architecture is a trade-off: the question is whether the structure removes more complexity than it adds.
 
 ## Companion repository
 
