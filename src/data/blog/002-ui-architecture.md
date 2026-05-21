@@ -247,22 +247,26 @@ The reducer handles state transitions: search started/succeeded/failed and page 
 
 That separation makes time-dependent coordination explicit without letting async callbacks commit state directly.
 
-## Decision guide
+## Boundary pressure guide
 
-The stages above are not strict rules. They are signals.
+Additional requirements put pressure on existing architectural boundaries. The rows below are not stages in a maturity ladder. They are signals that state ownership, interaction authority, async coordination, or transition ownership may need a clearer boundary so the UI remains easier to update, debug, and explain.
 
-| Requirement pressure | Architecture that may be enough |
-|---|---|
-| Independent visual state | Local Compose state |
-| State must survive beyond composition | `rememberSaveable`, ViewModel, or persistence depending on lifetime |
-| Values are derived from the same source | Single source of truth and derived state |
-| Synchronous local transition rules | Local callbacks can still be enough |
-| Two UI elements synchronize each other both ways | One interaction authority |
-| One cancellable async pipeline with delayed results | Single-state UDF plus coroutine or Flow cancellation |
-| Multiple async operations update the same fields | Stronger coordination |
-| Business ordering rules appear | State machine or actor/reducer |
-| Guards and generation checks are scattered across handlers | Actor/reducer MVI becomes justified |
-| One transition function mixes allowed work, async calls, result validation, and state commits | Actor/reducer split |
+### Requirement pressure
+
+| Requirement pressure | Boundary under pressure | Architecture response that may be enough |
+|---|---|---|
+| Independent visual state | No new boundary needed | Local Compose state |
+| State must survive beyond composition | State lifetime boundary | `rememberSaveable`, ViewModel, or persistence depending on lifetime |
+| Values are derived from the same source | Source-of-truth boundary | Single source of truth and derived state |
+| Synchronous local transition rules | Transition ownership boundary | Local callbacks can still be enough |
+| Two UI elements synchronize each other both ways | Interaction authority boundary | One owner for the shared interaction |
+| One cancellable async pipeline with delayed results | Async ownership boundary | Single-state UDF plus coroutine or Flow cancellation |
+| Multiple async operations update the same fields | State commit coordination boundary | Stronger coordination around state commits |
+| Business ordering rules appear | Ordering boundary | State machine or actor/reducer |
+
+Implementation symptoms matter too. If guards, generation checks, or stale-result checks are scattered across handlers, the current async boundary is probably too weak. Stronger coordination, such as actor/reducer MVI, may become justified.
+
+If one transition function starts allowed work, launches async calls, validates results, and commits state, the boundary has moved too far in the other direction. Splitting coordination from state transitions can make the code easier to update, debug, and explain.
 
 The point is not to choose the most structured pattern by default. The point is to notice when the current structure no longer absorbs the screen’s complexity.
 
