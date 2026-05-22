@@ -27,8 +27,6 @@ I start with a simple list and add requirements one by one: local search, filter
 
 You can read the post without opening the code, but the companion [repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. The repository README contains the folder-by-folder map, runnable sample app instructions, and test commands.
 
-I also include a side note about feedback loops. It uses a smaller category-navigation example because filter visibility itself does not create a bidirectional interaction. These feedback-loop examples live under `examples/side-notes/`; the repository also includes a classic Android Views/listener-binding version of the same problem.
-
 The runnable `sample-app` is optional. It exists so you can interact with selected examples visually. The tests are focused on the async ordering examples, where behavior is harder to verify by inspection alone.
 
 ## Stage 1: Local state is enough
@@ -99,6 +97,8 @@ The lesson is that `Clear filters` visibility is not independent state. It is a 
 ## Side note: Feedback loops between UI elements
 
 A feedback loop appears when two stateful parts of the UI drive each other.
+
+This side note uses a smaller category-navigation example instead of the catalog filters. Filter visibility is derived state, but it does not by itself create a bidirectional interaction. Category selection and list scrolling make the feedback-loop pressure easier to see. The companion code for this detour lives under `examples/side-notes/`.
 
 This looks similar to the previous stage because both problems involve source-of-truth confusion. The difference is that Stage 2 only had derived values. Here, one derived-looking value can also trigger side effects, so the problem becomes a feedback loop rather than simple derived-state consistency.
 
