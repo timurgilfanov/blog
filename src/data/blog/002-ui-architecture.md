@@ -100,7 +100,9 @@ The lesson is that `Clear filters` visibility is not independent state. It is a 
 
 A feedback loop appears when two stateful parts of the UI drive each other.
 
-This side note uses a smaller category-navigation example instead of the catalog filters. Filter visibility is derived state, but it does not by itself create a bidirectional interaction. Category selection and list scrolling make the feedback-loop pressure easier to see. The companion code for this detour lives under `examples/side-notes/`.
+This side note uses a smaller category-navigation example instead of the catalog filters. Filter visibility is derived state, but it does not by itself create a bidirectional interaction. Category selection and list scrolling make the feedback-loop pressure easier to see.[^feedback-loop-code]
+
+[^feedback-loop-code]: The companion code for this detour lives under `examples/side-notes/`. The Compose category-scroll example includes naive, guarded, and one-authority versions; the Android Views example covers the listener-binding `Select all` checkbox loop.
 
 This looks similar to the previous stage because both problems involve source-of-truth confusion. The difference is that Stage 2 only had derived values. Here, one derived-looking value can also trigger side effects, so the problem becomes a feedback loop rather than simple derived-state consistency.
 
@@ -124,7 +126,7 @@ This is a real feedback loop:
 - state B changes state A;
 - both directions can be triggered by user actions or programmatic updates.
 
-A local fix usually starts with guard state: `isProgrammaticScroll`, `ignoreScrollUpdates`, `pendingCategory`, a cancellable scroll job, or “only update after scroll settles.” The companion repository includes a guarded intermediate version for this reason. It can reduce visible glitches, but now the screen owns extra coordination rules:
+A local fix usually starts with guard state: `isProgrammaticScroll`, `ignoreScrollUpdates`, `pendingCategory`, a cancellable scroll job, or “only update after scroll settles.” A guarded intermediate version can reduce visible glitches, but now the screen owns extra coordination rules:
 
 - what happens if the user drags during an animated scroll;
 - whether a canceled scroll should keep the tapped category selected;
@@ -218,7 +220,7 @@ The problem is no longer only “how do I update state?” It becomes “who dec
 
 This keeps the Stage 3 UDF shape: state flows down from a ViewModel, and user actions flow back through methods such as `onQueryChanged` and `loadMore`. “Guarded” means those methods still launch requests and update `StateFlow`, but add checks so stale results do not update the UI.
 
-The companion `examples/04-pagination-coordination/01-guarded-udf-viewmodel` folder first compares three direct guarded UDF ViewModel versions:
+The companion Stage 4 code first compares three direct guarded UDF ViewModel versions:
 
 - **Generation checks** attach a simple version number to async work. When a result returns, the ViewModel applies it only if the generation still matches the current search. This handles stale search and page results without cancelling old work.
 - **Jobs and cancellation** keep explicit jobs for search and paging. A new search cancels obsolete work where possible, but the example still uses generation checks because cancellation alone is not a complete ordering rule.
@@ -228,13 +230,11 @@ These versions satisfy the search-and-pagination requirements, but the rule “n
 
 ### Centralized response: state-machine UDF ViewModel
 
-The state-machine version in the same companion folder improves ownership by centralizing View actions and async completions in one transition function. The invalidation rule is less scattered, but the single coordination point now does too much: it decides allowed work, starts async requests, validates async completions, and commits UI state.
+The state-machine version improves ownership by centralizing View actions and async completions in one transition function. The invalidation rule is less scattered, but the single coordination point now does too much: it decides allowed work, starts async requests, validates async completions, and commits UI state.
 
 ### Stronger response: actor/reducer MVI
 
 Actor/reducer MVI takes the state-machine idea one step further: keep one coordination boundary, but split ownership. The actor owns time-dependent coordination; the reducer owns state transitions.
-
-The companion `examples/04-pagination-coordination/02-mvi-actor-reducer` folder shows this response.
 
 In this design:
 
@@ -247,9 +247,9 @@ For this search screen, the actor decides:
 - whether a query should start a new search;
 - whether a page request is allowed;
 - whether an in-flight page request should be cancelled or ignored;
-- whether a page result still belongs to the current search generation.
+- whether a page result still belongs to the current search generation.[^actor-guard-scope]
 
-The companion code keeps this guard intentionally small: because the actor starts page requests from its own ordering projection and allows only one page request at a time, a matching generation is used as the proxy for “this completion still belongs to the current search.” If the example later adds prefetching, retries, or overlapping page requests, the actor should promote query, expected page, and loading-state checks to explicit completion guards.
+[^actor-guard-scope]: The companion code keeps this completion guard intentionally small: because the actor starts page requests from its own ordering projection and allows only one page request at a time, a matching generation is enough for this example. If the example later adds prefetching, retries, or overlapping page requests, query, expected page, and loading-state checks should become explicit completion guards.
 
 The reducer handles state transitions: search started/succeeded/failed and page started/succeeded/failed.
 
