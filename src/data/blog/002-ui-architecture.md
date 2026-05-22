@@ -257,9 +257,11 @@ That separation makes time-dependent coordination explicit without letting async
 
 ## Boundary pressure guide
 
-Additional requirements put pressure on existing architectural boundaries. The rows below are not stages in a maturity ladder. They are signals that state ownership, interaction authority, async coordination, or transition ownership may need a clearer boundary so the UI remains easier to update, debug, and explain.
+New UI state, interaction, lifecycle, and async requirements can expose boundary pressure in the current design. Sometimes an existing boundary becomes too weak; sometimes a missing boundary needs to be introduced: who owns state, who has authority over interactions, how long state must live, how async work is coordinated, and where transitions are committed. When these responsibilities are unclear, the UI becomes harder to update, debug, and explain.
 
-| Requirement pressure                                | Boundary under pressure            | Architecture response that may be enough                            |
+Use the table below as a diagnostic guide. It roughly follows the article’s progression from simple local state to stronger coordination, but it is not an upgrade path. Each row names a specific pressure, the boundary it stresses or introduces, and one architectural response that may be enough.
+
+| Requirement pressure                                | Boundary affected or needed        | Architecture response that may be enough                            |
 | --------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------- |
 | Independent visual state                            | No new boundary needed             | Local Compose state                                                 |
 | State must survive beyond composition               | State lifetime boundary            | `rememberSaveable`, ViewModel, or persistence depending on lifetime |
