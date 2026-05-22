@@ -178,7 +178,7 @@ The requirement changes from local filtering to asynchronous loading:
 
 The companion code uses search as the only request input from this point onward.[^stage-3-filters]
 
-[^stage-3-filters]: From Stage 3 onward, the companion examples leave out the Stage 2 filter chips. This keeps the code focused on delayed results, cancellation, retry, and latest-wins behavior. Filters could be added back as another request input, but they would not change the main async coordination problem.
+[^stage-3-filters]: From Stage 3 onward, the companion examples leave out the Stage 2 filter chips. This keeps the code focused on delayed results, cancellation, and latest-wins behavior. Filters could be added back as another request input, but they would not change the main async coordination problem.
 
 This adds time to the problem. State updates can now come from delayed repository responses, not only from immediate user events. A query change no longer only updates a string; it may also cancel previous work, start new work, clear an old error, show loading, and ignore stale results from older queries.
 
