@@ -23,9 +23,9 @@ This post follows one ordinary Android screen as requirements grow. The goal is 
 
 The main example is intentionally common: a searchable catalog screen.
 
-I start with a simple list and add requirements one by one: local search, filters, empty state, remote loading, and pagination. The point is not the screen itself, but how each requirement changes the relationship between UI elements, state, and asynchronous work.
+I start with a simple list and add requirements one by one: local search, filters, remote loading, and pagination. The list screen itself is not the interesting part. It is just a small example for showing how each new requirement changes the way UI state, user actions, and asynchronous work need to be coordinated.
 
-You can read the post without opening the code, but the companion [`ui-architecture-study` repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. The repository README contains the folder-by-folder map, runnable sample app instructions, and test commands. One simplification is intentional: the companion code for Stage 3 and Stage 4 keeps the catalog shape but drops filters to isolate async search and pagination coordination.
+You can read the post without opening the code, but the companion [repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. The repository README contains the folder-by-folder map, runnable sample app instructions, and test commands.
 
 I also include a side note about feedback loops. It uses a smaller category-navigation example because filter visibility itself does not create a bidirectional interaction. These feedback-loop examples live under `examples/side-notes/`; the repository also includes a classic Android Views/listener-binding version of the same problem.
 
@@ -171,6 +171,10 @@ The requirement changes from local filtering to asynchronous loading:
 - the UI shows loading;
 - the UI shows results or an error;
 - if the user types quickly, the newest query wins.
+
+The companion code uses search as the only request input from this point onward.[^stage-3-filters]
+
+[^stage-3-filters]: From Stage 3 onward, the companion examples leave out the Stage 2 filter chips. This keeps the code focused on delayed results, cancellation, retry, and latest-wins behavior. Filters could be added back as another request input, but they would not change the main async coordination problem.
 
 This adds time to the problem. State updates can now come from delayed repository responses, not only from immediate user events. A query change no longer only updates a string; it may also cancel previous work, start new work, clear an old error, show loading, and ignore stale results from older queries.
 
