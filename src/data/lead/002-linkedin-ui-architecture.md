@@ -1,6 +1,6 @@
-When designing an Android screen, it is easy to jump too early to pattern names: local Compose state, MVVM, UDF, MVI.
+When designing an Android screen, it is easy to start by asking which pattern fits: local Compose state, MVVM, UDF, or MVI.
 
-But architecture should start from requirements, not from how simple or complex the screen looks. What behavior must the screen support? And would a more structured approach remove complexity or only add ceremony?
+But that question comes too early. Architecture should start from requirements: what behavior must the screen support, and would a more structured approach remove complexity or only add ceremony?
 
 In this post, I follow one searchable Compose catalog screen as it grows from local interactions to remote loading and pagination. Each requirement creates a different kind of pressure, and I look for the smallest useful architectural response.
 
