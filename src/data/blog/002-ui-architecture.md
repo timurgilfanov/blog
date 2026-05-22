@@ -13,15 +13,9 @@ tags:
   - MVI
 ---
 
-A failed interview made me realize that my understanding of Android UI architecture was too pattern-oriented.
-
-I could talk about ViewModel-based screens, UDF, and MVI as implementation styles, but I was less precise about the requirements that make each style useful. Saying “use MVI for complex screens” was not enough, because “complex” can mean many different things.
-
-The question I needed to answer was not “Which pattern is better?” but “Which coordination problem does this screen actually have?”
+A failed interview made me realize that my understanding of Android UI architecture was too pattern-oriented. I could talk about MVVM, UDF, and MVI in general, but I was not sure about reasons behing each pattern. Saying “use MVI for complex screens” is not enough, because “complex” can mean many different things.
 
 This post follows one ordinary Android screen as requirements grow. The goal is to show how UI architecture pressure appears step by step, and how each change in architecture can relieve that pressure with the smallest useful increase in complexity.
-
-The longer project context is in the UI architecture section of my previous reflection: [UI architecture complexity should match real problems](/posts/one-year-rebuilding-android-architecture/#ui-architecture-complexity-should-match-real-problems).
 
 ## Table of contents
 
