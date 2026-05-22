@@ -297,3 +297,5 @@ Local state was correct while the behavior had one owner. A single source of tru
 For a shared codebase, the practical lesson is not to use the same heavy architecture everywhere. It is to use a consistent baseline and a clear escalation path. A light contract can make screens familiar across developers, while stronger boundaries should appear only when named coordination problems make the baseline hard to update, debug, or explain.
 
 Architecture should remove more complexity than it adds. Simple screens should stay simple. Coordinated screens should make ownership explicit.
+
+## Notes
