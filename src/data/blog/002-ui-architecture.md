@@ -25,9 +25,11 @@ The main example is intentionally common: a searchable catalog screen.
 
 I start with a simple list and add requirements one by one: local search, filters, remote loading, and pagination. The list screen itself is not the interesting part. It is just a small example for showing how each new requirement changes the way UI state, user actions, and asynchronous work need to be coordinated.
 
-You can read the post without opening the code, but the companion [repository](https://github.com/timurgilfanov/ui-architecture-study) follows the same main sequence. If you want to inspect code while reading, open the numbered `examples/` folders. The repository README contains the folder-by-folder map, runnable sample app instructions, and test commands.
+You can read the post without opening the code, but the companion [repository](https://github.com/timurgilfanov/ui-architecture-study) contains:
 
-The runnable `sample-app` is optional. It exists so you can interact with selected examples visually. The tests are focused on the async ordering examples, where behavior is harder to verify by inspection alone.
+- `examples` folders to inspect code while reading;
+- runnable `sample app` to interact with selected examples visually;
+- tests focused on the async ordering examples, where behavior is harder to verify by inspection alone.
 
 ## Stage 1: Local state is enough
 
