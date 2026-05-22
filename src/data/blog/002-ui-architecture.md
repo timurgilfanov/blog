@@ -2,7 +2,7 @@
 title: "From Compose State to MVI: Android UI Architecture Driven by Requirements"
 description: A requirement-driven walkthrough of how Android UI architecture evolves from local Compose state, through single UI state and unidirectional data flow, to actor/reducer MVI when multiple async operations create ordering rules.
 slug: android-ui-architecture-driven-by-requirements
-pubDatetime: 2026-05-17T00:00:00Z
+pubDatetime: 2026-05-22T00:00:00Z
 featured: false
 draft: false
 tags:

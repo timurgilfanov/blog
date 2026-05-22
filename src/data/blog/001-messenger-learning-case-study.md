@@ -4,7 +4,7 @@ description: Lessons from a year-long Android showcase project about maintainabl
 slug: one-year-rebuilding-android-architecture
 pubDatetime: 2026-05-11T21:29:00Z
 modDatetime: 2026-05-16T12:04:14Z
-featured: true
+featured: false
 draft: false
 tags:
   - Android Architecture
