@@ -205,7 +205,7 @@ New rules appear immediately:
 - do not start a second page request while one is already in flight;
 - a new search clears previous paged results;
 - a new search invalidates in-flight page requests;
-- a page result may be applied only if its query and page state still match the current search.
+- stale page results from older search generations must not update the current search.
 
 This is the stage where one new UI element creates a real coordination problem. The screen now has two async operations that update the same fields:
 
@@ -247,7 +247,9 @@ For this search screen, the actor decides:
 - whether a query should start a new search;
 - whether a page request is allowed;
 - whether an in-flight page request should be cancelled or ignored;
-- whether a page result still belongs to the current query.
+- whether a page result still belongs to the current search generation.
+
+The companion code keeps this guard intentionally small: because the actor starts page requests from its own ordering projection and allows only one page request at a time, a matching generation is used as the proxy for “this completion still belongs to the current search.” If the example later adds prefetching, retries, or overlapping page requests, the actor should promote query, expected page, and loading-state checks to explicit completion guards.
 
 The reducer handles state transitions: search started/succeeded/failed and page started/succeeded/failed.
 
