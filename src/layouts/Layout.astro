@@ -150,20 +150,89 @@ const structuredData = {
     <ClientRouter />
 
     <!-- Privacy-friendly analytics by Plausible -->
-    <script async src="https://plausible.io/js/pa-tMnlL2fGLELj7bhvJnD6a.js"
-    ></script>
+    <script
+      is:inline
+      async
+      src="https://plausible.io/js/pa-tMnlL2fGLELj7bhvJnD6a.js"></script>
     <script is:inline>
-      ((window.plausible =
+      window.plausible =
         window.plausible ||
-        function () {
-          (plausible.q = plausible.q || []).push(arguments);
-        }),
-        (plausible.init =
-          plausible.init ||
-          function (i) {
-            plausible.o = i || {};
-          }));
-      plausible.init();
+        ((...args) => {
+          (window.plausible.q = window.plausible.q || []).push(args);
+        });
+      window.plausible.init =
+        window.plausible.init ||
+        (i => {
+          window.plausible.o = i || {};
+        });
+      window.plausible.init();
+    </script>
+    <script is:inline>
+      (() => {
+        const documentElement = document.documentElement;
+
+        if (documentElement.dataset.plausibleClickTracking === "true") return;
+
+        documentElement.dataset.plausibleClickTracking = "true";
+
+        function trackPlausible(eventName, props) {
+          if (typeof window.plausible !== "function") return;
+
+          if (props) {
+            window.plausible(eventName, { props });
+            return;
+          }
+
+          window.plausible(eventName);
+        }
+
+        function isHost(url, hostname) {
+          const host = url.hostname.toLowerCase();
+          return host === hostname || host.endsWith(`.${hostname}`);
+        }
+
+        function getGitHubRepo(url) {
+          if (url.hostname.toLowerCase() !== "github.com") return undefined;
+
+          const [, repo] = url.pathname.split("/").filter(Boolean);
+          return repo?.replace(/\.git$/, "");
+        }
+
+        document.addEventListener(
+          "click",
+          event => {
+            if (event.defaultPrevented || !(event.target instanceof Element)) {
+              return;
+            }
+
+            const link = event.target.closest("a[href]");
+            if (!link) return;
+
+            let url;
+            try {
+              url = new URL(link.getAttribute("href"), window.location.href);
+            } catch {
+              return;
+            }
+
+            if (isHost(url, "github.com")) {
+              const repo = getGitHubRepo(url);
+              trackPlausible("GitHub Click", repo ? { repo } : undefined);
+              return;
+            }
+
+            if (isHost(url, "linkedin.com")) {
+              trackPlausible("LinkedIn Click");
+              return;
+            }
+
+            if (url.pathname === "/rss.xml") {
+              trackPlausible("RSS Subscribe Click");
+            }
+          },
+          true
+        );
+      })();
     </script>
 
     <!-- Minimal inline script to prevent FOUC - sets theme immediately -->
